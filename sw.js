@@ -1,10 +1,26 @@
-const CACHE='walid-omra-v2';
+const CACHE='walid-omra-v3';
 const APP=['./','./index.html','./styles.css','./app.js','./content.json','./icon.svg','./manifest.webmanifest','./config.js','./supabase-sync.js','./admin.html','./admin.css','./admin.js'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP)).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
-self.addEventListener('fetch',e=>{
- const req=e.request;if(req.method!=='GET'||new URL(req.url).origin!==location.origin)return;
- const url=new URL(req.url);
- if(url.pathname.endsWith('/content.json')){e.respondWith(fetch(req).catch(()=>caches.match(req)));return}
- e.respondWith(caches.match(req).then(cached=>cached||fetch(req).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(c=>c.put(req,copy))}return response})));
+self.addEventListener('install',event=>{
+ event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',event=>{
+ event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
+});
+self.addEventListener('fetch',event=>{
+ const request=event.request;
+ if(request.method!=='GET'||new URL(request.url).origin!==location.origin)return;
+ const url=new URL(request.url);
+ const live=request.mode==='navigate'||/\/(?:admin\.html|index\.html|config\.js|admin\.js|app\.js|supabase-sync\.js|content\.json)$/.test(url.pathname);
+ const cached=()=>caches.match(request,{ignoreSearch:true});
+ if(live){
+  event.respondWith(fetch(request,{cache:'no-store'}).then(response=>{
+   if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}
+   return response;
+  }).catch(cached));
+ }else{
+  event.respondWith(cached().then(response=>response||fetch(request).then(fresh=>{
+   if(fresh.ok){const copy=fresh.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}
+   return fresh;
+  })));
+ }
 });

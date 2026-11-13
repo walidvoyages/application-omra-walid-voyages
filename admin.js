@@ -10,7 +10,16 @@ const alerts=()=>error?'<p role="alert" class="alert">'+esc(error)+'</p>':info?'
 function setMessage(s,isError=false){error=isError?s:'';info=isError?'':s;paint()}
 function field(label,name,type='text',extra=''){return '<div class="group '+extra+'"><label for="'+name+'">'+label+'</label><input name="'+name+'" id="'+name+'" type="'+type+'" value="'+esc(editing?.[name]??'')+'" '+(['title','start_date','end_date'].includes(name)?'required':'')+'></div>'}
 function paint(){
- if(!okConfig()){root.innerHTML='<div class="login"><div class="card">'+brand+'<h1>إعداد الإدارة</h1><p class="muted">قاعدة Supabase موش مربوطة بعد. لازم إعداد ملف config.js وتنفيذ ملف supabase/schema.sql، وبعد إنشاء حساب المسؤول.</p><div class="alert">ما فماش login أو mot de passe افتراضي في التطبيق.</div><a href="./">العودة للتطبيق</a></div></div>';return}
+ if(!okConfig()){
+  const validUrl=/^https:\/\/[a-z0-9.-]+\.supabase\.co\/?$/.test(cfg.url||'');
+  const validKey=typeof cfg.anonKey==='string'&&cfg.anonKey.length>15;
+  const detail=!validUrl||!validKey
+    ? 'إعدادات الربط غير موجودة في النسخة المحمّلة من config.js. يمكن المتصفح مازال يستعمل Cache قديم.'
+    : 'الإعدادات موجودة لكن مكتبة Supabase ما تحمّلتش. جرّب تتثبّت من الاتصال أو مانع الإعلانات.';
+  root.innerHTML='<div class="login"><div class="card">'+brand+'<h1>الربط مازال ما كمّلش في المتصفح</h1><p class="muted">'+detail+'</p><p class="hint">جرّب Ctrl + Shift + R لتحديث الصفحة بالقوة. إذا ما يصلحش، تأكّد من تفعيل JavaScript وعدم حجب cdn.jsdelivr.net.</p><button class="btn primary" id="retry">إعادة تحميل الصفحة</button> <a href="./">العودة للتطبيق</a></div></div>';
+  document.getElementById('retry').onclick=()=>location.reload();
+  return;
+ }
  if(view==='login'){root.innerHTML='<div class="login"><div class="card">'+brand+'<h1>دخول المسؤول</h1><p class="muted">برامج العمرات، الأسعار، الفنادق، الصور والنشر.</p>'+alerts()+'<form id="login"><div class="group"><label for="email">البريد الإلكتروني</label><input type="email" autocomplete="username" id="email" required dir="ltr" placeholder="admin@example.com"></div><div class="group"><label for="password">Mot de passe</label><input type="password" autocomplete="current-password" required minlength="8" id="password" dir="ltr"></div><button id="loginBtn" class="btn primary full" type="submit">دخول آمن</button></form><button id="forgot" class="link">نسيت كلمة السر؟</button><p class="hint">الدخول للمسؤولين المعتمدين فقط. ما تشاركش كلمة السر.</p></div></div>';document.getElementById('login').onsubmit=login;document.getElementById('forgot').onclick=forgot;return}
  if(view==='recover'){root.innerHTML='<div class="login"><div class="card">'+brand+'<h1>كلمة سر جديدة</h1>'+alerts()+'<form id="recover"><div class="group"><label for="pass1">كلمة السر الجديدة</label><input id="pass1" type="password" required minlength="12" autocomplete="new-password"></div><div class="group"><label for="pass2">تأكيد كلمة السر</label><input id="pass2" type="password" required minlength="12" autocomplete="new-password"></div><button class="btn primary full" type="submit">تغيير كلمة السر</button></form></div></div>';document.getElementById('recover').onsubmit=resetPassword;return}
  if(view==='edit'){editPage();return}
