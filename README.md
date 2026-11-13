@@ -56,3 +56,12 @@ L'app affiche également les liens de crédit dans À propos. Les photos sont h�
 أضفنا إشعارات **داخل التطبيق**: آيات مع السورة والآية، أذكار، وصلاة على النبي ﷺ. تظهر عند فتح التطبيق (بفاصل يمنع الإزعاج) وتستمر خلال استعماله باختيار كل 30/60/120 دقيقة، مع قائمة تاريخية وزر تعطيل. نظام الهدوء من 23:00 إلى 07:00 بحسب وقت الجهاز. المحتوى مخزّن محليًا ويعمل دون اتصال.
 
 إشعارات الجهاز اختيارية وتتطلب إذن المستخدم ودعم المتصفح؛ في هذه النسخة هي best effort ما دام التطبيق نشطًا، **وليست Push notifications** ولا تُرسل بعد الإغلاق الكلّي. يحتاج الإرسال في الخلفية Backend + Web Push subscriptions + scheduling وإدارة الموافقة.
+
+## Brand, travel & dhikr update
+- La marque de l'application utilise le logo fourni de Walid Voyages (vignette web optimisée dans `omra-logo.webp`) et les couleurs W-wave officielles #49AAE3 / #B5D33F.
+- Footer: 58 150 699 / 73 201 660 / https://www.walid-voyages.com.
+- Azkar: catégories matin, soir, après la prière, voyage et divers.
+- Le fil d'actualité privilégie la dernière Omra publiée selon la vraie date `published_at`, pas la date du départ; les dates ne sont pas inventées.
+- Espace admin: horaires des rappels, horaires silence, délais avant voyage et rappel pendant le voyage. Exécuter `supabase/reminder-settings.sql` dans Supabase SQL Editor AVANT de sauvegarder la configuration.
+- Les rappels voyageurs nécessitent que l'utilisateur choisisse explicitement un programme parmi les voyages publiés, sans créer de réservation.
+- Tout rappel fonctionne en mode applicatif seulement (pas d'envoi Push garanti après fermeture).
