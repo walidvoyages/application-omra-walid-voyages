@@ -68,7 +68,7 @@ async function showDevice(item){
  }catch(err){console.warn('Device reminder unavailable:',err?.message)}
 }
 function showNext(automatic=false){
- if(automatic&&(!enabled||isQuiet()))return false;
+ if(automatic&&(!generalAllowed()||isQuiet()))return false;
  const next=(Number.isInteger(lastIndex)?lastIndex:-1)+1;
  lastIndex=next%reminders.length;
  const now=Date.now();
@@ -149,19 +149,25 @@ document.addEventListener('change',event=>{
  }
 });
 window.WVReminders={toastHtml,pageHtml,unreadCount,markRead,openInbox};
+function generalAllowed(){
+ const cfg=window.WVSchedule?.getSettings?.()||{};
+ return enabled&&cfg.enabled!==false&&cfg.general_enabled!==false;
+}
+function effectiveCadence(){
+ const globalMinutes=Number(window.WVSchedule?.getSettings?.()?.general_interval_minutes||0);
+ return Math.max(cadence,Number.isFinite(globalMinutes)?globalMinutes:0);
+}
 function automaticTick(){
- if(!enabled||isQuiet())return;
+ if(!generalAllowed()||isQuiet())return;
  const elapsed=Date.now()-lastAutomatic;
- if(elapsed>=cadence*60*1000){
-  showNext(true);
- }
+ if(elapsed>=effectiveCadence()*60*1000)showNext(true);
 }
 // Once on launch, avoid repeated popups on rapid reloads.
 setTimeout(()=>{
- if(enabled&&!isQuiet()&&Date.now()-lastAutomatic>=15*60*1000)showNext(true);
+ if(generalAllowed()&&!isQuiet()&&Date.now()-lastAutomatic>=15*60*1000)showNext(true);
 },1800);
 tickTimer=setInterval(automaticTick,60*1000);
 document.addEventListener('visibilitychange',()=>{
- if(!document.hidden&&Date.now()-lastAutomatic>=cadence*60*1000)automaticTick();
+ if(!document.hidden&&Date.now()-lastAutomatic>=effectiveCadence()*60*1000)automaticTick();
 });
 })();
