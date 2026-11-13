@@ -50,3 +50,9 @@ Photos externes utilisées dans le diaporama, licences et crédits disponibles s
 - [Masjid-Al-Nabawi Madinah.jpg](https://commons.wikimedia.org/wiki/File:Masjid-Al-Nabawi_Madinah.jpg), HUTA Group, CC BY-SA 4.0.
 
 L'app affiche également les liens de crédit dans À propos. Les photos sont hébergées par Wikimedia Commons et nécessitent une connexion pour s'afficher au premier chargement.
+
+## التذكيرات الإيمانية
+
+أضفنا إشعارات **داخل التطبيق**: آيات مع السورة والآية، أذكار، وصلاة على النبي ﷺ. تظهر عند فتح التطبيق (بفاصل يمنع الإزعاج) وتستمر خلال استعماله باختيار كل 30/60/120 دقيقة، مع قائمة تاريخية وزر تعطيل. نظام الهدوء من 23:00 إلى 07:00 بحسب وقت الجهاز. المحتوى مخزّن محليًا ويعمل دون اتصال.
+
+إشعارات الجهاز اختيارية وتتطلب إذن المستخدم ودعم المتصفح؛ في هذه النسخة هي best effort ما دام التطبيق نشطًا، **وليست Push notifications** ولا تُرسل بعد الإغلاق الكلّي. يحتاج الإرسال في الخلفية Backend + Web Push subscriptions + scheduling وإدارة الموافقة.
