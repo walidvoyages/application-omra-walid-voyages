@@ -101,8 +101,8 @@ async function saveItem(e){
   const request=editing?sb.from('omra_programs').update(payload).eq('id',editing.id):sb.from('omra_programs').insert(payload);
   // Supabase v2: a write succeeds without a trailing SELECT/RETURNING.
   // Avoid a misleading failure when the write is allowed but row-return is not.
-  const {error}=await request;
-  if(error)throw error;
+  const {saveError}=await request;
+  if(saveError)throw saveError;
   editing=null;error='';info='تمّ حفظ البرنامج بنجاح في قاعدة البيانات.';await fetchItems()
  }catch(err){
   console.error('Omra save failed:',err);
@@ -117,7 +117,7 @@ async function saveItem(e){
  }finally{btn.disabled=false}
 }
 async function delItem(id){const p=items.find(x=>x.id===id);if(!p||!confirm('متأكّد تحب تحذف «'+p.title+'» نهائيًا؟'))return;
- const {error}=await sb.from('omra_programs').delete().eq('id',id);if(error){setMessage('فشل حذف الرحلة.',true);return}
+ const {error:deleteError}=await sb.from('omra_programs').delete().eq('id',id);if(deleteError){setMessage('فشل حذف الرحلة ('+(deleteError.code||'غير معروف')+').',true);return}
  error='';info='تم حذف الرحلة.';await fetchItems();
 }
 async function logout(){await sb.auth.signOut();user=null;items=[];view='login';errorMsg('');paint()}
