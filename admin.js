@@ -7,7 +7,17 @@ const brand='<div class="logo"><span>W<b>V</b></span>Walid Voyages · Espace Adm
 const okConfig=()=>/^https:\/\/[a-z0-9.-]+\.supabase\.co\/?$/.test(cfg.url||'')&&typeof cfg.anonKey==='string'&&cfg.anonKey.length>15&&!!window.supabase;
 let sb=null,user=null,items=[],view='login',editing=null,info='',error='',query='',recovery=false;
 const alerts=()=>error?'<p role="alert" class="alert">'+esc(error)+'</p>':info?'<p role="status" class="alert good">'+esc(info)+'</p>':'';
-function setMessage(s,isError=false){error=isError?s:'';info=isError?'':s;paint()}
+function setMessage(s,isError=false){
+ error=isError?s:'';info=isError?'':s;
+ // Do not destroy an unsaved program when showing a validation or API error.
+ const editorNotice=view==='edit'?document.getElementById('edit-feedback'):null;
+ if(editorNotice){
+  editorNotice.innerHTML=alerts();
+  editorNotice.scrollIntoView({block:'nearest',behavior:'smooth'});
+  return;
+ }
+ paint();
+}
 function field(label,name,type='text',extra=''){return '<div class="group '+extra+'"><label for="'+name+'">'+label+'</label><input name="'+name+'" id="'+name+'" type="'+type+'" value="'+esc(editing?.[name]??'')+'" '+(['title','start_date','end_date'].includes(name)?'required':'')+'></div>'}
 function paint(){
  if(!okConfig()){
@@ -62,7 +72,7 @@ function dashboard(){
 }
 function row(p){return '<tr><td><strong>'+esc(p.title)+'</strong><br><span class="muted">'+esc(p.airline)+'</span></td><td dir="ltr">'+esc(p.start_date)+' → '+esc(p.end_date)+'</td><td>'+(p.price_tnd==null?'عند الوكالة':Number(p.price_tnd).toLocaleString('fr-TN')+' DT')+'</td><td><span class="status '+(p.is_published?'on':'')+'">'+(p.is_published?'منشورة':'Brouillon')+'</span></td><td><div class="actions"><button class="btn light small" data-edit="'+esc(p.id)+'">تعديل</button><button class="btn danger small" data-del="'+esc(p.id)+'">حذف</button></div></td></tr>'}
 function attachRows(){document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{editing=items.find(x=>x.id===b.dataset.edit)||null;view='edit';errorMsg('');paint()});document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delItem(b.dataset.del))}
-function editPage(){root.innerHTML='<div class="card" style="max-width:800px;margin:20px auto"><header class="head"><div>'+brand+'<h1>'+(editing?'تعديل برنامج':'إضافة عمرة جديدة')+'</h1></div><button id="back" class="btn light">رجوع</button></header><p class="muted">إختار Publier كان التواريخ والأسعار والفنادق تأكّدت منهم.</p>'+alerts()+'<form id="form"><div class="formgrid">'+
+function editPage(){root.innerHTML='<div class="card" style="max-width:800px;margin:20px auto"><header class="head"><div>'+brand+'<h1>'+(editing?'تعديل برنامج':'إضافة عمرة جديدة')+'</h1></div><button id="back" class="btn light">رجوع</button></header><p class="muted">إختار Publier كان التواريخ والأسعار والفنادق تأكّدت منهم.</p><div id="edit-feedback" aria-live="assertive">'+alerts()+'</div><form id="form"><div class="formgrid">'+
  field('اسم العمرة *','title','text','span2')+
  field('تاريخ الذهاب *','start_date','date')+
  field('تاريخ العودة *','end_date','date')+
@@ -89,9 +99,22 @@ async function saveItem(e){
  const btn=document.getElementById('save');btn.disabled=true;
  try{
   const request=editing?sb.from('omra_programs').update(payload).eq('id',editing.id):sb.from('omra_programs').insert(payload);
-  const {error}=await request.select('id').single();if(error)throw error;
+  // Supabase v2: a write succeeds without a trailing SELECT/RETURNING.
+  // Avoid a misleading failure when the write is allowed but row-return is not.
+  const {error}=await request;
+  if(error)throw error;
   editing=null;error='';info='تمّ حفظ البرنامج بنجاح في قاعدة البيانات.';await fetchItems()
- }catch(err){setMessage('فشل الحفظ. راجع قاعدة البيانات وصلاحيات المسؤول. '+(err.code||''),true)}finally{btn.disabled=false}
+ }catch(err){
+  console.error('Omra save failed:',err);
+  const code=String(err?.code||'');
+  const message=String(err?.message||'Erreur inconnue').slice(0,350);
+  let hint='راجِع البيانات واتصال Supabase.';
+  if(code==='42501'||/permission denied|row-level security/i.test(message))hint='صلاحيات RLS: راجع ارتباط User UID بجدول omra_admins وسياسات INSERT/UPDATE.';
+  else if(code==='PGRST204'||/column|schema cache/i.test(message))hint='فمّا عمود ناقص في قاعدة البيانات. شغّل SQL schema.sql وتثبّت من أسماء الأعمدة.';
+  else if(/jwt|token|not authenticated|session/i.test(message))hint='الجلسة انتهت، أعمل Logout وبعد Login من جديد.';
+  else if(/Failed to fetch|NetworkError|fetch failed/i.test(message))hint='المتصفح ما قدرش يوصل إلى Supabase. راجع الاتصال.';
+  setMessage('فشل الحفظ ('+(code||'بدون رمز')+'): '+message+' — '+hint,true);
+ }finally{btn.disabled=false}
 }
 async function delItem(id){const p=items.find(x=>x.id===id);if(!p||!confirm('متأكّد تحب تحذف «'+p.title+'» نهائيًا؟'))return;
  const {error}=await sb.from('omra_programs').delete().eq('id',id);if(error){setMessage('فشل حذف الرحلة.',true);return}
