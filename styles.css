@@ -53,3 +53,27 @@
 .schedule-list{display:grid;gap:8px}.schedule-item{display:flex;align-items:center;gap:10px;padding:13px}
 .schedule-item span{font-size:24px}.schedule-item strong{flex:1;font-size:12px}.schedule-item small{color:#2c86a9;font-size:12px;font-weight:900}
 .scheduled-toast{top:110px}
+
+/* Omra learning assessment */
+.omra-test-teaser{padding:22px;text-align:center;border:1px solid #cfe4f4;background:linear-gradient(145deg,#fff,#f2f9ff);display:grid;gap:10px}
+.omra-test-icon,.omra-exam-mark{font-size:37px;display:block;text-align:center}
+.omra-test-teaser h2{font-size:17px;color:#163a64}.omra-test-teaser p{font-size:12px;color:#54748b}
+.omra-test-ready{font-size:11px;color:#2c799d;font-weight:800}
+.omra-exam-intro{padding:21px;display:grid;gap:11px}.omra-exam-intro>h2{text-align:center;font-size:18px;color:#163a64}.omra-exam-intro>p{font-size:12px;color:#637a86;text-align:center}
+#omra-exam-start{display:grid;gap:8px;margin-top:8px}
+#omra-exam-start label{font-size:12px;color:#163a64;font-weight:900}
+#omra-exam-start input{width:100%;padding:12px;border:1px solid #cedde9;border-radius:13px;background:#fbfeff;direction:rtl;text-align:right}
+#omra-exam-start .omra-exam-privacy{font-size:10px;color:#607f8b;margin:5px 0}
+.omra-exam-question{padding:19px}.omra-exam-hint{font-size:11px;color:#6b8494;margin-top:13px}
+.omra-exam-result{text-align:center;display:grid;gap:8px;padding:25px 16px}
+.omra-exam-person{font-size:14px;color:#325e75;font-weight:800}.omra-exam-score{font-size:44px;font-weight:900;color:#167fa9}
+.omra-exam-result>strong{font-size:17px;color:#467b1d}.omra-exam-result>p{font-size:12px}
+.omra-exam-result>small{font-size:10px;color:#637c86}
+.omra-exam-actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.omra-exam-corrections{display:grid;gap:10px}.omra-exam-correction{padding:14px}
+.omra-exam-correction h3{font-size:13px;margin:8px 0;color:#173e5a}
+.omra-exam-correction p{font-size:12px;color:#405b6c;margin:3px 0}
+.omra-exam-correction>small{font-size:11px;color:#66818f;line-height:1.8}
+.omra-correct-status{display:inline-flex;font-size:10px;font-weight:900;padding:5px 10px;border-radius:20px}
+.omra-correct-status.ok{background:#ecf6d6;color:#5b7e24}
+.omra-correct-status.miss{background:#fff0ed;color:#a24a37}
