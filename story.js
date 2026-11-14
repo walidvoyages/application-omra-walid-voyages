@@ -94,7 +94,7 @@ function journeyPage(){
  const name=invite.customer_name||user.email;
  const done=steps().filter(s=>s.stored?.visited_at).length,total=steps().length;
  let selected=steps().find(s=>s.key===editKey);
- return '<section class="card story-profile"><div class="story-profile-head"><span>👤</span><div><p class="story-hint">ملفّي الشخصي</p><h2>'+safe(name)+'</h2><small>'+safe(user.email||'')+'</small></div></div>'+
+ return '<section class="card story-profile"><div class="story-profile-head">'+(window.WVStoryExtras?.profileAvatarHtml?.()||'<span>👤</span>')+'<div><p class="story-hint">ملفّي الشخصي</p><h2>'+safe(name)+'</h2><small>'+safe(user.email||'')+'</small></div></div>'+
  '<div class="story-trip"><span>🕋 عمرتي الخاصة</span><strong>'+safe(trip?.title||'برنامج العمرة')+'</strong><small>من '+dateText(trip?.start_date)+' إلى '+dateText(trip?.end_date)+'</small>'+
  '<small>'+safe(trip?.airline||'')+(trip?.hotel?' · '+safe(trip.hotel):'')+'</small></div>'+
  '<div class="story-progress"><strong>تقدّم الرحلة: '+done+' من '+total+' محطة</strong><div class="bar"><span style="width:'+Math.round(done*100/total)+'%"></span></div></div></section>'+
