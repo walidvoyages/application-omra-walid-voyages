@@ -34,6 +34,8 @@ function paint(){
  if(view==='recover'){root.innerHTML='<div class="login"><div class="card">'+brand+'<h1>كلمة سر جديدة</h1>'+alerts()+'<form id="recover"><div class="group"><label for="pass1">كلمة السر الجديدة</label><input id="pass1" type="password" required minlength="12" autocomplete="new-password"></div><div class="group"><label for="pass2">تأكيد كلمة السر</label><input id="pass2" type="password" required minlength="12" autocomplete="new-password"></div><button class="btn primary full" type="submit">تغيير كلمة السر</button></form></div></div>';document.getElementById('recover').onsubmit=resetPassword;return}
  if(view==='edit'){editPage();return}
  if(view==='settings'){settingsPage();return}
+ if(view==='story-invites'){storyInvitesPage();return}
+ if(view==='custom-adhkar'){customAdhkarPage();return}
  dashboard()
 }
 async function isAdmin(){
@@ -63,11 +65,13 @@ function dashboard(){
  const upcoming=items.filter(x=>x.end_date>=today).length;
  const filtered=items.filter(x=>[x.title,x.airline,x.hotel,x.tag].join(' ').toLowerCase().includes(query.toLowerCase()));
  root.innerHTML='<header class="head"><div>'+brand+'<h1>إدارة برامج العمرة</h1><p class="muted">'+esc(user?.email||'')+'</p></div><div class="buttons"><a href="./" target="_blank" rel="noopener">فتح التطبيق</a><button id="logout" class="btn light">خروج</button></div></header>'+
- '<div class="admin-special"><button id="reminder-settings" class="btn light">🔔 إدارة التذكيرات ومواقيتها</button><span class="muted">إعدادات تظهر للجميع بعد الحفظ في Supabase</span></div><div class="stats"><div class="stat"><strong>'+items.length+'</strong><span>البرامج الكل</span></div><div class="stat"><strong>'+published+'</strong><span>المنشورة</span></div><div class="stat"><strong>'+upcoming+'</strong><span>القادمة والحالية</span></div></div>'+
+ '<div class="admin-special"><button id="reminder-settings" class="btn light">🔔 إدارة التذكيرات ومواقيتها</button><button id="story-invites-open" class="btn light">🕋 حسابات المعتمرين وكود الرحلة</button><button id="custom-adhkar-open" class="btn light">📿 إضافة أذكار للتطبيق</button><span class="muted">إعدادات تظهر للجميع بعد الحفظ في Supabase</span></div><div class="stats"><div class="stat"><strong>'+items.length+'</strong><span>البرامج الكل</span></div><div class="stat"><strong>'+published+'</strong><span>المنشورة</span></div><div class="stat"><strong>'+upcoming+'</strong><span>القادمة والحالية</span></div></div>'+
  '<section class="card"><h2>البرامج</h2><p class="muted">الـSauvegarde تسجّل كلّ تعديل في قاعدة Supabase. البرنامج غير المنشور ما يظهرش للزائر.</p>'+alerts()+'<div class="toolbar"><input type="search" id="search" value="'+esc(query)+'" placeholder="ابحث عن برنامج…"><button id="new" class="btn primary">+ إضافة عمرة</button></div>'+
  '<div class="tablewrap"><table><thead><tr><th>اسم العمرة</th><th>التواريخ</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="rows">'+(filtered.length?filtered.map(row).join(''):'<tr><td colspan="5">ما فماش برامج بعد.</td></tr>')+'</tbody></table></div></section><p class="bottom">© Walid Voyages · Espace Admin</p>';
  document.getElementById('logout').onclick=logout;
  document.getElementById('reminder-settings').onclick=loadSettings;
+ document.getElementById('story-invites-open').onclick=loadStoryInvites;
+ document.getElementById('custom-adhkar-open').onclick=loadCustomAdhkar;
  document.getElementById('new').onclick=()=>{editing=null;view='edit';errorMsg('');paint()};
  document.getElementById('search').oninput=e=>{query=e.target.value;const list=items.filter(x=>[x.title,x.airline,x.hotel,x.tag].join(' ').toLowerCase().includes(query.toLowerCase()));document.getElementById('rows').innerHTML=list.length?list.map(row).join(''):'<tr><td colspan="5">ما فماش نتائج.</td></tr>';attachRows()};
  attachRows();
@@ -192,6 +196,103 @@ async function saveSettings(e){
  if(saveError){setMessage('فشل حفظ الإعدادات: '+String(saveError.message).slice(0,180)+' ('+(saveError.code||'')+')',true);return}
  reminderSettings={...reminderSettings,...payload};
  setMessage('تمّ حفظ إعدادات التذكيرات في Supabase بنجاح.');
+}
+
+
+/* Secure client invitation + dynamic adhkar management.
+   Requires supabase/story-and-adhkar.sql (no secret key on client). */
+let storyInvites=[],revealedInvite='',inviteError='',customAdhkar=[],adhkarError='';
+const availableAdhkarCategories=[
+ ['morning','أذكار الصباح'],['evening','أذكار المساء'],['prayer','بعد الصلاة'],
+ ['sleep','النوم'],['waking','الاستيقاظ'],['travel','السفر'],['umra','العمرة'],
+ ['home','البيت'],['mosque','المسجد'],['food','الطعام'],['stress','الهم والفرج'],
+ ['healing','الشفاء'],['rain','المطر'],['istighfar','الاستغفار'],['salawat','الصلاة على النبي'],
+ ['quran','أدعية من القرآن'],['other','متنوعة'],['fasting','الصيام']
+];
+async function loadStoryInvites(){
+ view='story-invites';inviteError='';revealedInvite='';errorMsg('');
+ const r=await sb.from('omra_story_invites').select('id,program_id,customer_name,linked_user_id,claimed_at,issued_at,expires_at,revoked_at').order('issued_at',{ascending:false}).limit(150);
+ if(r.error)inviteError='قاعدة بيانات المعتمرين مازالت موش مفعّلة. نفّذ supabase/story-and-adhkar.sql في SQL Editor. ('+esc(r.error.code||r.error.message||'')+')';
+ storyInvites=r.data||[];paint();
+}
+function storyInvitesPage(){
+ const published=items.filter(x=>x.is_published);
+ root.innerHTML='<div class="card" style="max-width:850px;margin:18px auto">'+brand+
+ '<header class="head"><div><h1>🕋 حسابات المعتمرين</h1><p class="muted">إنشاء كود خاص بكل حريف وربطو ببرنامج عمرة منشور</p></div><button class="btn light" id="invites-back">رجوع</button></header>'+
+ (inviteError?'<p class="alert">'+esc(inviteError)+'</p>':'')+alerts()+
+ (revealedInvite?'<div class="admin-secret"><strong>الكود الخاص — انسخو توّا وابعثو للحريف بطريقة آمنة</strong><p>ما يبانش الكود هذا مرّة ثانية في الإدارة. ما تنشروش للعموم.</p><code id="invite-token" dir="ltr">'+esc(revealedInvite)+'</code><button id="copy-invite" class="btn primary" type="button">نسخ الكود</button></div>':'')+
+ '<section class="card"><h2>إنشاء دعوة لحريف</h2><form id="create-story-invite" class="formgrid"><div class="group"><label>اسم المعتمر (للعرض في ملفّه)</label><input name="customer" maxlength="150" required minlength="2" placeholder="الاسم واللقب"></div>'+
+ '<div class="group"><label>العمرة اللي مسجّل فيها</label><select name="program" required>'+published.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.title)+' — '+esc(p.start_date)+'</option>').join('')+'</select></div>'+
+ '<div class="span2 buttons"><button class="btn primary" type="submit" '+(!published.length||!!inviteError?'disabled':'')+'>إنشاء كود خاص</button></div></form><p class="hint">الحريف يعمل حساب Email / Mot de passe ثم يدخل الكود. الكود يتربط بأول حساب يستعملو، ومن بعد ما ينجمش شخص آخر يستعملو.</p></section>'+
+ '<section class="card"><h2>الدعوات والحرفاء</h2><div class="tablewrap"><table><thead><tr><th>المعتمر</th><th>الرحلة</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>'+
+ (storyInvites.length?storyInvites.map(i=>'<tr><td>'+esc(i.customer_name)+'</td><td>'+esc(items.find(p=>p.id===i.program_id)?.title||'برنامج')+'</td><td>'+ (i.revoked_at?'ملغاة':i.linked_user_id?'حساب مرتبط':'لم يستعمل الكود بعد')+'</td><td>'+(i.revoked_at?'—':'<button class="btn danger small" data-revoke-invite="'+esc(i.id)+'">إلغاء الدعوة</button>')+'</td></tr>').join(''):'<tr><td colspan="4">ما فماش دعوات بعد.</td></tr>')+
+ '</tbody></table></div></section></div>';
+ document.getElementById('invites-back').onclick=()=>{view='dashboard';paint()};
+ document.getElementById('create-story-invite').onsubmit=createStoryInvite;
+ document.getElementById('copy-invite')?.addEventListener('click',()=>{navigator.clipboard.writeText(revealedInvite).then(()=>{document.getElementById('copy-invite').textContent='تم النسخ ✓'}).catch(()=>{})});
+ document.querySelectorAll('[data-revoke-invite]').forEach(b=>b.onclick=()=>revokeStoryInvite(b.dataset.revokeInvite));
+}
+async function createStoryInvite(e){
+ e.preventDefault();const b=e.submitter;b.disabled=true;
+ const f=new FormData(e.target),id=String(f.get('program')),name=String(f.get('customer')||'').trim();
+ try{
+  const r=await sb.rpc('omra_issue_story_invite',{p_program_id:id,p_customer_name:name});
+  if(r.error)throw r.error;
+  const token=r.data;
+  await loadStoryInvites();revealedInvite=token;info='تم إنشاء دعوة خاصة للمعتمر.';paint();
+ }catch(e){inviteError='تعذّر إنشاء الدعوة: '+String(e.message||e).slice(0,180);paint()}
+ finally{b.disabled=false}
+}
+async function revokeStoryInvite(id){
+ if(!confirm('متأكد من إلغاء دعوة المعتمر؟ هذا ينجم يمنع صاحبها من عرض الرحلة والذكريات.'))return;
+ const r=await sb.rpc('omra_revoke_story_invite',{p_invite_id:id});
+ if(r.error){inviteError='تعذّر إلغاء الدعوة: '+String(r.error.message).slice(0,180);paint();return}
+ await loadStoryInvites();info='تم إلغاء الدعوة.';paint();
+}
+async function loadCustomAdhkar(){
+ view='custom-adhkar';adhkarError='';errorMsg('');
+ const r=await sb.from('omra_adhkar_custom').select('*').order('created_at',{ascending:false}).limit(300);
+ if(r.error)adhkarError='لازم تنفّذ supabase/story-and-adhkar.sql لإضافة الأذكار عبر الإدارة. ('+esc(r.error.code||r.error.message||'')+')';
+ customAdhkar=r.data||[];paint();
+}
+function customAdhkarPage(){
+ root.innerHTML='<div class="card" style="max-width:880px;margin:18px auto">'+brand+
+ '<header class="head"><div><h1>📿 إدارة أذكار التطبيق</h1><p class="muted">ما يتنشر حتى ذكر جديد إلاّ بعد مراجعة النص والمصدر من المسؤول.</p></div><button class="btn light" id="adhkar-admin-back">رجوع</button></header>'+
+ (adhkarError?'<p class="alert">'+esc(adhkarError)+'</p>':'')+alerts()+
+ '<form id="custom-adhkar-form"><div class="formgrid"><div class="group"><label>عنوان الذكر</label><input name="title" required maxlength="120" minlength="2"></div>'+
+ '<div class="group"><label>التصنيف</label><select name="category">'+availableAdhkarCategories.map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join('')+'</select></div>'+
+ '<div class="group span2"><label>نصّ الذكر</label><textarea name="body" required minlength="5" maxlength="3500" rows="4"></textarea></div>'+
+ '<div class="group span2"><label>المصدر / اسم السورة ورقم الآية / مرجع الحديث</label><input name="source" maxlength="250" required placeholder="مثال: سورة البقرة: 201"></div>'+
+ '<label class="check span2"><input type="checkbox" name="is_published"> Publier — بعد مراجعة صحة النص والمصدر</label></div>'+
+ '<div class="buttons"><button class="btn primary" type="submit" '+(adhkarError?'disabled':'')+'>حفظ الذكر</button></div></form>'+
+ '<section class="card"><h2>الأذكار الإضافية ('+customAdhkar.length+')</h2><div class="tablewrap"><table><thead><tr><th>الذكر</th><th>التصنيف</th><th>الحالة</th><th>التحكّم</th></tr></thead><tbody>'+
+ (customAdhkar.length?customAdhkar.map(x=>'<tr><td><strong>'+esc(x.title)+'</strong><br><small>'+esc(x.source)+'</small></td><td>'+esc(availableAdhkarCategories.find(c=>c[0]===x.category)?.[1]||x.category)+'</td><td>'+(x.is_published?'منشور':'Brouillon')+'</td><td><button class="btn light small" data-adhkar-publish="'+esc(x.id)+'">'+(x.is_published?'إخفاء':'Publier')+'</button> <button class="btn danger small" data-adhkar-delete="'+esc(x.id)+'">حذف</button></td></tr>').join(''):'<tr><td colspan="4">ما فماش أذكار إضافية بعد.</td></tr>')+
+ '</tbody></table></div></section></div>';
+ document.getElementById('adhkar-admin-back').onclick=()=>{view='dashboard';paint()};
+ document.getElementById('custom-adhkar-form').onsubmit=createCustomAdhkar;
+ document.querySelectorAll('[data-adhkar-publish]').forEach(b=>b.onclick=()=>toggleCustomAdhkar(b.dataset.adhkarPublish));
+ document.querySelectorAll('[data-adhkar-delete]').forEach(b=>b.onclick=()=>deleteCustomAdhkar(b.dataset.adhkarDelete));
+}
+async function createCustomAdhkar(e){
+ e.preventDefault();const f=new FormData(e.target);
+ const payload={category:String(f.get('category')),title:String(f.get('title')||'').trim(),body:String(f.get('body')||'').trim(),source:String(f.get('source')||'').trim(),is_published:f.get('is_published')==='on'};
+ const button=e.submitter;button.disabled=true;
+ const r=await sb.from('omra_adhkar_custom').insert(payload);
+ button.disabled=false;
+ if(r.error){adhkarError='فشل حفظ الذكر: '+String(r.error.message).slice(0,180);paint();return}
+ await loadCustomAdhkar();info='تم حفظ الذكر بنجاح.';paint();
+}
+async function toggleCustomAdhkar(id){
+ const item=customAdhkar.find(x=>x.id===id);if(!item)return;
+ const r=await sb.from('omra_adhkar_custom').update({is_published:!item.is_published,updated_at:new Date().toISOString()}).eq('id',id);
+ if(r.error){adhkarError='فشل تحديث حالة الذكر: '+String(r.error.message);paint();return}
+ await loadCustomAdhkar();info='تم تحديث حالة النشر.';paint();
+}
+async function deleteCustomAdhkar(id){
+ if(!confirm('متأكد من حذف الذكر نهائيًا؟'))return;
+ const r=await sb.from('omra_adhkar_custom').delete().eq('id',id);
+ if(r.error){adhkarError='فشل حذف الذكر: '+String(r.error.message);paint();return}
+ await loadCustomAdhkar();info='تم حذف الذكر.';paint();
 }
 
 async function logout(){await sb.auth.signOut();user=null;items=[];view='login';errorMsg('');paint()}
