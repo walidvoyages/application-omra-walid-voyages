@@ -100,9 +100,9 @@ function journeyPage(){
  '<div class="story-progress"><strong>تقدّم الرحلة: '+done+' من '+total+' محطة</strong><div class="bar"><span style="width:'+Math.round(done*100/total)+'%"></span></div></div></section>'+
  badge()+
  '<section class="section"><div class="section-head"><h2>مخطّط عمرتي نقطة بنقطة</h2></div><p class="story-intro">إضغط على أي محطة، علّمها زرتها واكتب ذكرى باش تلقاها وقت ترجع.</p>'+
- '<div class="story-timeline">'+steps().map(s=>'<button class="card story-stop '+(s.stored?.visited_at?'visited':'')+'" data-story-stop="'+safe(s.key)+'"><span class="story-stop-icon">'+s.emoji+'</span><span class="story-stop-info"><strong>'+safe(s.title)+'</strong><small>'+(s.stored?.visited_at?'✓ زرتها بتاريخ '+dateText(s.stored.visited_at):'لم تُسجّل الزيارة بعد')+'</small>'+(s.stored?.note?'<small class="story-note-preview">'+safe(s.stored.note.slice(0,100))+'</small>':'')+'</span><span>›</span></button>').join('')+'</div>'+
+ '<div class="story-timeline">'+steps().map(s=>'<div class="story-stop-row"><button class="card story-stop '+(s.stored?.visited_at?'visited':'')+'" data-story-stop="'+safe(s.key)+'"><span class="story-stop-icon">'+s.emoji+'</span><span class="story-stop-info"><strong>'+safe(s.title)+'</strong><small>'+(s.stored?.visited_at?'✓ زرتها بتاريخ '+dateText(s.stored.visited_at):'لم تُسجّل الزيارة بعد')+'</small>'+(s.stored?.note?'<small class="story-note-preview">'+safe(s.stored.note.slice(0,100))+'</small>':'')+'</span><span>›</span></button><button class="story-photo-shortcut" type="button" data-story-media-open="'+safe(s.key)+'">📸 إضافة صور لهذه المحطة</button></div>').join('')+'</div>'+
  '<form id="story-add-form" class="story-new-stop"><label>📍 زرت بلاصة أخرى؟ زيدها لمخطّطك</label><input name="newStop" maxlength="150" minlength="2" required placeholder="مثال: جبل أحد، بئر غرس، متحف…"><button type="submit" class="btn light">+ إضافة محطة</button></form></section>'+
- (selected?'<div class="story-edit-overlay" role="dialog" aria-label="تعديل ذكرى المحطة"><form id="story-stop-form" class="card story-edit-card"><h3>'+selected.emoji+' '+safe(selected.title)+'</h3><label class="story-checkbox"><input type="checkbox" name="visited" '+(selected.stored?.visited_at?'checked':'')+'> زرت هالمحطة</label><label>شنوّة تحب تتذكّر من اللحظة هاذي؟</label><textarea name="note" rows="5" maxlength="4000" placeholder="اكتب شنوّة صار أو دعوة تحب تتذكّرها…">'+safe(selected.stored?.note||'')+'</textarea><div class="story-form-actions"><button class="btn lime" type="submit">حفظ الذكرى</button><button class="btn light" type="button" data-story="close">إغلاق</button></div></form></div>':'')+
+ (selected?'<div class="story-edit-overlay" role="dialog" aria-label="تعديل ذكرى المحطة"><form id="story-stop-form" class="card story-edit-card"><h3>'+selected.emoji+' '+safe(selected.title)+'</h3><label class="story-checkbox"><input type="checkbox" name="visited" '+(selected.stored?.visited_at?'checked':'')+'> زرت هالمحطة</label><label>شنوّة تحب تتذكّر من اللحظة هاذي؟</label><textarea name="note" rows="5" maxlength="4000" placeholder="اكتب شنوّة صار أو دعوة تحب تتذكّرها…">'+safe(selected.stored?.note||'')+'</textarea><div class="story-media-inline"><strong>📸 صوري من هالمحطة</strong><p>اختار صور من تليفونك، وتتحفظ في حسابك الخاص.</p><label class="story-photo-picker" for="story-photo-upload">📷 إضافة صور من الهاتف<input id="story-photo-upload" data-story-photo-upload="'+safe(selected.key)+'" type="file" accept="image/jpeg,image/png,image/webp" multiple></label><small>JPG / PNG / WEBP، أقصى 6 ميغا للصورة. يلزم تفعيل مشاركة الصور في Supabase.</small>'+(window.WVStoryExtras?.renderPhotosForKey?.(selected.key)||'')+'</div><div class="story-form-actions"><button class="btn lime" type="submit">حفظ الذكرى</button><button class="btn light" type="button" data-story="close">إغلاق</button></div></form></div>':'')+
  '<section class="section"><div class="card story-bottom"><strong>🔐 خصوصيتك</strong><p>الذكريات والمراحل تظهر كان لحسابك. التطبيق ما يأكّدش الحجز، وما ينشرش ذكرياتك للعموم.</p><button type="button" data-story="logout" class="btn light">خروج من حسابي</button></div></section>';
 }
 function pageHtml(){
@@ -225,6 +225,8 @@ document.addEventListener('click',e=>{
   if(action==='resend')resendConfirmation();
   return;
  }
+ const media=e.target.closest('[data-story-media-open]');
+ if(media){editKey=media.dataset.storyMediaOpen;error='';message='';update();return}
  const step=e.target.closest('[data-story-stop]');
  if(step){editKey=step.dataset.storyStop;error='';message='';update();return}
  const b=e.target.closest('[data-story]');
@@ -232,6 +234,6 @@ document.addEventListener('click',e=>{
  if(b.dataset.story==='close'){editKey='';update()}
  if(b.dataset.story==='logout'){if(db)db.auth.signOut().then(()=>{user=null;invite=null;trip=null;stops=[];editKey='';message='';error='';update()})}
 });
-window.WVStory={pageHtml,hasAccount:()=>!!user,hasJourney:()=>!!invite,refresh:reload,refreshView:update};
+window.WVStory={pageHtml,hasAccount:()=>!!user,hasJourney:()=>!!invite,refresh:reload,refreshView:update,getMediaContext:(key)=>{const step=steps().find(s=>s.key===key);return step&&user&&invite?{userId:user.id,inviteId:invite.id,step:{key:step.key,title:step.title,order:step.order,storedId:step.stored?.id||null}}:null}};
 boot();
 })();
