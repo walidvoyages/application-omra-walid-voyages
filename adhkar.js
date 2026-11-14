@@ -4,7 +4,8 @@
 (function(){
 'use strict';
 const library=window.WV_ADHKAR_LIBRARY||{categories:[],entries:[]};
-const items=Array.isArray(library.entries)?library.entries.filter(x=>x&&typeof x.id==='string'&&typeof x.body==='string'):[];
+const builtins=Array.isArray(library.entries)?library.entries.filter(x=>x&&typeof x.id==='string'&&typeof x.body==='string'):[];
+let items=[...builtins];
 const categories=Array.isArray(library.categories)?library.categories:[];
 const lookup=new Map(items.map(x=>[x.id,x]));
 const read=(k,d)=>{try{const s=localStorage.getItem('wv-adhkar-'+k);return s==null?d:JSON.parse(s)}catch{return d}};
@@ -85,5 +86,32 @@ document.addEventListener('click',event=>{
  }
  if(event.target.closest('[data-azkar-more]')){pageSize+=24;updateResults()}
 });
-window.WVAdhkar={pageHtml,entries:items,categories};
+
+window.WVAdhkar={pageHtml,categories,get entries(){return items}};
+const cfg=window.WALID_SUPABASE_CONFIG||{};
+const online=/^https:\/\/[a-z0-9.-]+\.supabase\.co\/?$/.test(cfg.url||'')&&cfg.anonKey&&window.supabase;
+let remoteClient=online?window.supabase.createClient(cfg.url,cfg.anonKey):null;
+let refreshing=false;
+async function syncCustom(){
+ if(!remoteClient||refreshing)return;
+ refreshing=true;
+ try{
+  const result=await remoteClient.from('omra_adhkar_custom').select('id,category,title,body,source').eq('is_published',true).limit(1000);
+  if(result.error)throw result.error;
+  const added=(result.data||[]).filter(x=>labels[x.category]).map(x=>({
+   id:'admin-'+x.id,category:x.category,title:x.title,body:x.body,source:x.source||'ذكر مضاف من إدارة Walid Voyages'
+  }));
+  const unique=new Map([...builtins,...added].map(x=>[x.id,x]));
+  items=[...unique.values()];
+  lookup.clear();for(const item of items)lookup.set(item.id,item);
+  if(state.tab==='more'&&state.page==='adhkar')render();
+ }catch(e){
+  // Missing optional SQL migration: retain the built-in offline library.
+  console.info('Custom adhkar sync unavailable:',e?.message||e);
+ }finally{refreshing=false}
+}
+syncCustom();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncCustom()});
+setInterval(()=>{if(!document.hidden)syncCustom()},120000);
+
 })();
