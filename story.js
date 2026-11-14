@@ -45,7 +45,7 @@ async function reload(){
    stops=records.data||[];
   }else{stops=[]}
  }catch(e){const m=String(e.message||e);error=/PGRST205|PGRST204|schema cache|Could not find the table/i.test(m)?'خدمة ربط العمرة مازالت موش مفعّلة في قاعدة البيانات. إدارة Walid Voyages يلزمها تفعّل إعدادات الرحلات في Supabase.':'تعذّر تحميل رحلتك: '+m.slice(0,160);invite=null;trip=null;stops=[]}
- finally{loading=false;update()}
+ finally{loading=false;update();if(window.WVStoryExtras?.reload)Promise.resolve().then(()=>window.WVStoryExtras.reload())}
 }
 async function boot(){
  if(!db)return;
