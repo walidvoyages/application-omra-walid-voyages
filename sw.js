@@ -1,5 +1,5 @@
-const CACHE='walid-omra-v17';
-const APP=['./','./index.html','./styles.css','./app.js','./content.json','./icon.svg','./manifest.webmanifest','./config.js','./supabase-sync.js','./admin.html','./admin.css','./admin.js','./reminders.js','./adhkar.js','./adhkar-library.js','./schedule.js','./omra-logo.webp','./quiz-omra.js','./hero-kaaba.svg','./story.js','./story-auth.css'];
+const CACHE='walid-omra-v18';
+const APP=['./','./index.html','./styles.css','./app.js','./content.json','./icon.svg','./manifest.webmanifest','./config.js','./supabase-sync.js','./admin.html','./admin.css','./admin.js','./reminders.js','./adhkar.js','./adhkar-library.js','./schedule.js','./omra-logo.webp','./quiz-omra.js','./hero-kaaba.svg','./story.js','./story-extras.js','./story-auth.css'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP)).then(()=>self.skipWaiting()));
 });
