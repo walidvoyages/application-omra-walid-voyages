@@ -77,3 +77,17 @@
 .omra-correct-status{display:inline-flex;font-size:10px;font-weight:900;padding:5px 10px;border-radius:20px}
 .omra-correct-status.ok{background:#ecf6d6;color:#5b7e24}
 .omra-correct-status.miss{background:#fff0ed;color:#a24a37}
+
+/* Tunisia + Saudi prayer times, with explicit local clock and stable LTR numeric cells */
+.prayer-countries{display:grid;gap:13px}
+.prayer-country{margin:0;min-width:0}
+.prayer-saudi{background:linear-gradient(145deg,#134f70,#0a718e)}
+.prayer-country-time{font-size:10px;color:#d6eef6;margin-top:2px}
+.prayer-country .prayer-times{direction:rtl}
+.prayer-country .prayer-unit strong{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+.prayer-country .next-time{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+.prayer-retry{background:#fff;border:0;border-radius:11px;color:#0c6e90;font-size:11px;padding:8px 14px;font-weight:800;margin-top:8px}
+.wv-contact-links{direction:ltr!important;unicode-bidi:isolate;display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.wv-contact-links a{direction:ltr;unicode-bidi:isolate;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.wv-contact-links bdi{direction:ltr;unicode-bidi:isolate}
+.wv-phone-icon{font-size:13px}
