@@ -9,7 +9,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 let guest=null,invite=null,stops=[],photos=[],imageUrls={},avatarUrl='',busy=false,error='',notice='',loaded=false;
 const dateText=d=>d?new Date(d).toLocaleDateString('fr-TN'):'';
 const mapUrl=s=>'https://www.google.com/maps?q='+encodeURIComponent(s.latitude+','+s.longitude);
-function update(){if(window.state?.tab==='more'&&window.state.page==='follow')window.render?.()}
+function update(){if(typeof state!=='undefined'&&state.tab==='more'&&state.page==='follow'&&typeof render==='function')render()}
 function pageHtml(){
  const title='<section class="card ff-header"><div class="ff-symbol">👨‍👩‍👧</div><h2>تابع معتمر من عايلتك</h2><p>بكود المتابعة برك، من غير Email، من غير Mot de passe ومن غير تأكيد حساب.</p></section>';
  const feedback=error?'<p class="story-feedback bad" role="alert">'+esc(error)+'</p>':notice?'<p class="story-feedback good" role="status">'+esc(notice)+'</p>':'';
