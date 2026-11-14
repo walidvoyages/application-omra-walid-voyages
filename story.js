@@ -22,6 +22,18 @@ const defaults=[
 ];
 let user=null,invite=null,trip=null,stops=[],busy=false,error='',message='',editKey='',loading=false;
 let authMode='login',authEmail='',pendingConfirmation=false;
+let recoveryActive=false,recoveryReady=false;
+const recoveryFragment=new URLSearchParams(location.hash.slice(1));
+const recoveryQuery=new URLSearchParams(location.search);
+const recoveryLinkError=recoveryFragment.get('error_code')||recoveryQuery.get('error_code')||'';
+const recoveryLinkDescription=recoveryFragment.get('error_description')||recoveryQuery.get('error_description')||'';
+const recoveryCallback=(recoveryFragment.get('type')==='recovery');
+function showStoryFromAuthLink(){
+ state.tab='more';state.page='story';state.dialog=null;
+ // Only replace the URL after Supabase has consumed its recovery tokens.
+ history.replaceState(null,'',location.pathname+'#more/story');
+ render(true);
+}
 const dateText=d=>{if(!d)return '—';const p=String(d).slice(0,10).split('-');return p.length===3?p.reverse().join('/'):String(d)};
 const official=key=>defaults.find(x=>x[0]===key);
 const steps=()=>{
@@ -50,40 +62,66 @@ async function reload(){
 async function boot(){
  if(!db)return;
  try{
+  // Register first. PASSWORD_RECOVERY can fire while Supabase reads the email link.
+  db.auth.onAuthStateChange((event,session)=>{
+   if(event==='PASSWORD_RECOVERY'){
+    user=session?.user||user;recoveryActive=true;recoveryReady=true;authMode='set-password';
+    error='';message='رابط الإيميل صحيح. اختار كلمة سر جديدة.';
+    Promise.resolve().then(showStoryFromAuthLink);
+    return;
+   }
+   const next=session?.user||null;
+   if(next?.id!==user?.id){
+    user=next;invite=null;trip=null;stops=[];update();
+    if(user&&!recoveryActive)Promise.resolve().then(reload);
+   }
+  });
   const result=await db.auth.getUser();
   user=result.data?.user||null;
-  if(user)await reload();
-  db.auth.onAuthStateChange((event,session)=>{
-   // Never refresh synchronously inside the auth callback.
-   const next=session?.user||null;
-   if(next?.id!==user?.id){user=next;invite=null;trip=null;stops=[];update();if(user)Promise.resolve().then(reload)}
-  });
+  if(recoveryLinkError){
+   recoveryActive=true;recoveryReady=false;authMode='recover';
+   error=/expired|invalid|otp_expired/i.test(recoveryLinkError+' '+recoveryLinkDescription)
+    ?'رابط الاسترجاع انتهت صلاحيته أو استُعمل قبل. اطلب رابط جديد من هنا.'
+    :'تعذّر التثبّت من رابط الاسترجاع. اطلب رابط جديد.';
+   message='';
+   Promise.resolve().then(showStoryFromAuthLink);
+  }else if(recoveryCallback&&user){
+   // Handles recovery links processed before the listener became active.
+   recoveryActive=true;recoveryReady=true;authMode='set-password';
+   error='';message='تم التثبّت من رابط الإيميل. اختار كلمة سر جديدة.';
+   Promise.resolve().then(showStoryFromAuthLink);
+  }else if(user&&!recoveryActive)await reload();
  }catch(e){console.warn('Story auth unavailable:',e?.message||e)}
  update();
 }
 function badge(){return error?'<p class="story-feedback bad" role="alert">'+safe(error)+'</p>':message?'<p class="story-feedback good" role="status">'+safe(message)+'</p>':''}
 function loginPage(){
  if(!db)return '<div class="card story-auth-card" role="alert">إعدادات Supabase غير متاحة. تواصل مع إدارة Walid Voyages.</div>';
- const signup=authMode==='signup',recover=authMode==='recover';
- const title=recover?'استرجاع كلمة السر':signup?'أنشئ حسابك الخاص':'مرحبًا بيك في عمرتي حكاية';
- const description=recover?'اكتب إيميلك ونبعثولك رابط لإعادة تعيين كلمة السر.':signup?'افتح حسابك الشخصي باش تحفظ مراحلك وذكرياتك.':'ادخل بحسابك الشخصي باش ترجع لرحلتك وذكرياتك في أي وقت.';
- return '<section class="card story-auth-card" aria-label="حساب المعتمر">'+
- '<div class="story-auth-visual"><div class="story-auth-emblem">🕋</div><span class="story-auth-eyebrow">WALID VOYAGES · OMRA STORY</span><h2>'+title+'</h2><p>'+description+'</p></div>'+
- badge()+
- (pendingConfirmation?'<div class="story-verify-notice"><span>✉️</span><div><strong>تثبّت من بريدك الإلكتروني</strong><p>إذا وصلتك رسالة تأكيد من Supabase، افتح الرابط اللي فيها قبل ما تدخل للحساب. شوف زادة Spam/Junk.</p></div></div>':'')+
+ const signup=authMode==='signup',recover=authMode==='recover',newPassword=authMode==='set-password';
+ const title=newPassword?'كلمة سر جديدة':recover?'استرجاع كلمة السر':signup?'أنشئ حسابك الخاص':'مرحبًا بيك في عمرتي حكاية';
+ const desc=newPassword?'اختار كلمة سر جديدة باش ترجع تدخل لحسابك.':recover?'اكتب إيميلك ونبعثولك رابط استرجاع كلمة السر.':signup?'افتح حسابك الشخصي باش تحفظ مراحلك وذكرياتك.':'ادخل بحسابك الشخصي باش ترجع لرحلتك وذكرياتك في أي وقت.';
+ const header='<section class="card story-auth-card" aria-label="حساب المعتمر"><div class="story-auth-visual"><div class="story-auth-emblem">🕋</div><span class="story-auth-eyebrow">WALID VOYAGES · OMRA STORY</span><h2>'+title+'</h2><p>'+desc+'</p></div>'+badge();
+ if(newPassword){
+  return header+
+   '<form id="story-reset-form" class="story-auth-form" autocomplete="on">'+
+   '<div class="story-auth-field"><label for="story-new-password">كلمة السر الجديدة</label><div class="story-auth-input-wrap"><input id="story-new-password" type="password" name="newPassword" autocomplete="new-password" minlength="8" required placeholder="8 أحرف على الأقل"></div></div>'+
+   '<div class="story-auth-field"><label for="story-confirm-password">تأكيد كلمة السر الجديدة</label><div class="story-auth-input-wrap"><input id="story-confirm-password" type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required placeholder="عاود اكتب كلمة السر"></div></div>'+
+   '<button type="submit" class="story-auth-submit" '+(busy?'disabled':'')+'>تغيير كلمة السر</button></form>'+
+   '<p class="story-auth-privacy">ما تشاركش كلمة السر أو رابط الاسترجاع مع أي حد.</p></section>';
+ }
+ return header+
+ (pendingConfirmation?'<div class="story-verify-notice"><span>✉️</span><div><strong>تثبّت من بريدك الإلكتروني</strong><p>شوف رسالة تأكيد Supabase في بريدك أو Spam/Junk.</p></div></div>':'')+
  '<div class="story-auth-tabs" role="tablist" aria-label="نوع الحساب">'+
  '<button type="button" data-story-auth-mode="login" class="'+(authMode==='login'?'active':'')+'" aria-selected="'+(authMode==='login')+'">دخول</button>'+
  '<button type="button" data-story-auth-mode="signup" class="'+(authMode==='signup'?'active':'')+'" aria-selected="'+(authMode==='signup')+'">إنشاء حساب</button></div>'+
  '<form id="story-login-form" class="story-auth-form" autocomplete="on">'+
  '<div class="story-auth-field"><label for="story-email">البريد الإلكتروني</label><div class="story-auth-input-wrap"><span class="story-auth-input-icon" aria-hidden="true">✉</span><input id="story-email" type="email" inputmode="email" autocomplete="email" name="email" dir="ltr" required placeholder="exemple@gmail.com" value="'+safe(authEmail)+'"></div></div>'+
  (!recover?'<div class="story-auth-field"><label for="story-password">كلمة السر</label><div class="story-auth-input-wrap"><span class="story-auth-input-icon" aria-hidden="true">♧</span><input id="story-password" type="password" name="password" autocomplete="'+(signup?'new-password':'current-password')+'" minlength="'+(signup?'8':'6')+'" required placeholder="كلمة السر متاعك"><button type="button" class="story-password-toggle" data-story-auth="toggle-pass">إظهار</button></div></div>':'')+
- '<button type="submit" id="story-auth-submit" class="story-auth-submit" '+(busy?'disabled':'')+'>'+(busy?'جاري التثبّت…':recover?'إرسال رابط الاسترجاع':signup?'إنشاء حسابي':'دخول إلى عمرتي')+'</button>'+
- '</form>'+
+ '<button type="submit" id="story-auth-submit" class="story-auth-submit" '+(busy?'disabled':'')+'>'+(busy?'جاري التثبّت…':recover?'إرسال رابط الاسترجاع':signup?'إنشاء حسابي':'دخول إلى عمرتي')+'</button></form>'+
  '<div class="story-auth-support">'+
  (!recover?'<button type="button" data-story-auth-mode="recover">نسيت كلمة السر؟</button>':'<button type="button" data-story-auth-mode="login">رجوع للدخول</button>')+
  (pendingConfirmation?'<button type="button" data-story-auth="resend">إعادة إرسال تأكيد البريد</button>':'')+
- '</div>'+
- '<p class="story-auth-privacy">🔒 حسابك خاص بيك. عمرتك ما تظهر كان بعد ربط الكود اللي تعطيهولك الوكالة. ما تبعثش كلمة السر لأي حد.</p></section>';
+ '</div><p class="story-auth-privacy">🔒 حسابك خاص بيك. عمرتك ما تظهر كان بعد ربط الكود اللي تعطيهولك الوكالة.</p></section>';
 }
 function linkPage(){
  return '<section class="card story-panel"><div class="story-symbol">🎟️</div><h2>اربط رحلتك بملفّك</h2><p>مرحبًا '+safe(user.email||'')+'. بعد ما تثبّت حجزك، الوكالة تعطيك كود عمرة خاص عبر WhatsApp أو Email. أدخلو مرّة واحدة وتتربط رحلتك بحسابك.</p>'+badge()+
@@ -107,7 +145,7 @@ function journeyPage(){
 }
 function pageHtml(){
  return viewTitle('عمرتي حكاية','رحلتي، مراحلي وذكرياتي الخاصة')+
- (!configured?'<div class="card story-panel">خدمة حسابات المعتمرين غير متاحة حاليًا.</div>':!user?loginPage():loading?'<div class="card story-panel">جاري تحميل رحلتك الخاصة…</div>':!invite?linkPage():journeyPage())+(window.WVStoryExtras?.render?.()||'');
+ (!configured?'<div class="card story-panel">خدمة حسابات المعتمرين غير متاحة حاليًا.</div>':recoveryActive||!user?loginPage():loading?'<div class="card story-panel">جاري تحميل رحلتك الخاصة…</div>':!invite?linkPage():journeyPage())+(window.WVStoryExtras?.render?.()||'');
 }
 async function handleLogin(event){
  event.preventDefault();if(busy||!db)return;
@@ -117,7 +155,7 @@ async function handleLogin(event){
  if(submit){submit.disabled=true;submit.textContent='جاري التثبّت…'}
  try{
   if(authMode==='recover'){
-   const r=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname+'#more/story'});
+   const r=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
    if(r.error)throw r.error;
    notify('إذا الإيميل مسجّل، تصلك رسالة باش تبدّل كلمة السر. تفقّد صندوق الوارد والـSpam.');
   }else if(authMode==='signup'){
@@ -150,6 +188,27 @@ async function handleLogin(event){
   }
  }catch(e){notify('تعذّر إكمال العملية: '+String(e.message||e).slice(0,220),true)}
  finally{busy=false;const b=document.getElementById('story-auth-submit');if(b){b.disabled=false;if(b.textContent==='جاري التثبّت…')b.textContent=authMode==='signup'?'إنشاء حسابي':authMode==='recover'?'إرسال رابط الاسترجاع':'دخول إلى عمرتي'}}
+}
+async function handleResetPassword(e){
+ e.preventDefault();if(busy||!db)return;
+ if(!recoveryReady){notify('رابط الاسترجاع غير صالح. اطلب رابط جديد.',true);return}
+ const f=new FormData(e.target),pass=String(f.get('newPassword')||''),repeated=String(f.get('confirmPassword')||'');
+ if(pass.length<8){notify('كلمة السر لازم فيها 8 أحرف على الأقل.',true);return}
+ if(pass!==repeated){notify('كلمة السر وتأكيدها موش متطابقين.',true);return}
+ busy=true;
+ const btn=e.target.querySelector('[type="submit"]');
+ if(btn){btn.disabled=true;btn.textContent='جاري تغيير كلمة السر…'}
+ try{
+  const session=await db.auth.getSession();
+  if(session.error||!session.data?.session)throw new Error('رابط الاسترجاع انتهى. اطلب رابط جديد.');
+  const r=await db.auth.updateUser({password:pass});
+  if(r.error)throw r.error;
+  recoveryActive=false;recoveryReady=false;authMode='login';pendingConfirmation=false;
+  user=null;invite=null;trip=null;stops=[];
+  await db.auth.signOut();
+  notify('تبدّلت كلمة السر بنجاح ✅ توا ادخل بالإيميل وكلمة السر الجديدة.');
+ }catch(err){notify('تعذّر تغيير كلمة السر: '+String(err.message||err).slice(0,180),true)}
+ finally{busy=false;if(btn){btn.disabled=false;btn.textContent='تغيير كلمة السر'}}
 }
 async function resendConfirmation(){
  if(!db||!authEmail){notify('اكتب البريد الإلكتروني متاعك الأول.',true);return}
@@ -203,6 +262,7 @@ async function saveStop(event){
 }
 document.addEventListener('submit',e=>{
  if(e.target.id==='story-login-form')handleLogin(e);
+ else if(e.target.id==='story-reset-form')handleResetPassword(e);
  else if(e.target.id==='story-code-form')handleCode(e);
  else if(e.target.id==='story-add-form')addStop(e);
  else if(e.target.id==='story-stop-form')saveStop(e);
