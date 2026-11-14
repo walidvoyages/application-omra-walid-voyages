@@ -21,6 +21,7 @@ const defaults=[
  ['return','🏠','العودة إلى تونس']
 ];
 let user=null,invite=null,trip=null,stops=[],busy=false,error='',message='',editKey='',loading=false;
+let authMode='login',authEmail='',pendingConfirmation=false;
 const dateText=d=>{if(!d)return '—';const p=String(d).slice(0,10).split('-');return p.length===3?p.reverse().join('/'):String(d)};
 const official=key=>defaults.find(x=>x[0]===key);
 const steps=()=>{
@@ -62,12 +63,27 @@ async function boot(){
 }
 function badge(){return error?'<p class="story-feedback bad" role="alert">'+safe(error)+'</p>':message?'<p class="story-feedback good" role="status">'+safe(message)+'</p>':''}
 function loginPage(){
- if(!db)return '<div class="card story-panel">إعدادات Supabase غير متاحة. تواصل مع الإدارة.</div>';
- return '<section class="card story-panel"><div class="story-symbol">🕋</div><h2>مرحبا بيك في عمرتي حكاية</h2><p>كل معتمر ينجم يعمل حساب خاص ويشوف غير رحلتو وذكرياتو.</p>'+badge()+
- '<form id="story-login-form" class="story-form"><label>البريد الإلكتروني</label><input type="email" autocomplete="email" name="email" dir="ltr" required placeholder="client@example.com">'+
- '<label>كلمة السر</label><input type="password" name="password" autocomplete="current-password" minlength="8" required placeholder="8 caractères minimum">'+
- '<div class="story-form-actions"><button class="btn lime" name="action" value="login" type="submit">دخول</button><button class="btn light" name="action" value="signup" type="submit">إنشاء حساب</button></div></form>'+
- '<p class="story-hint">إذا أنشأت حسابًا جديدًا، يمكن Supabase يطلب تأكيد البريد قبل الدخول. ما يلزمكش تبعث كلمة السر للوكالة.</p></section>';
+ if(!db)return '<div class="card story-auth-card" role="alert">إعدادات Supabase غير متاحة. تواصل مع إدارة Walid Voyages.</div>';
+ const signup=authMode==='signup',recover=authMode==='recover';
+ const title=recover?'استرجاع كلمة السر':signup?'أنشئ حسابك الخاص':'مرحبًا بيك في عمرتي حكاية';
+ const description=recover?'اكتب إيميلك ونبعثولك رابط لإعادة تعيين كلمة السر.':signup?'افتح حسابك الشخصي باش تحفظ مراحلك وذكرياتك.':'ادخل بحسابك الشخصي باش ترجع لرحلتك وذكرياتك في أي وقت.';
+ return '<section class="card story-auth-card" aria-label="حساب المعتمر">'+
+ '<div class="story-auth-visual"><div class="story-auth-emblem">🕋</div><span class="story-auth-eyebrow">WALID VOYAGES · OMRA STORY</span><h2>'+title+'</h2><p>'+description+'</p></div>'+
+ badge()+
+ (pendingConfirmation?'<div class="story-verify-notice"><span>✉️</span><div><strong>تثبّت من بريدك الإلكتروني</strong><p>إذا وصلتك رسالة تأكيد من Supabase، افتح الرابط اللي فيها قبل ما تدخل للحساب. شوف زادة Spam/Junk.</p></div></div>':'')+
+ '<div class="story-auth-tabs" role="tablist" aria-label="نوع الحساب">'+
+ '<button type="button" data-story-auth-mode="login" class="'+(authMode==='login'?'active':'')+'" aria-selected="'+(authMode==='login')+'">دخول</button>'+
+ '<button type="button" data-story-auth-mode="signup" class="'+(authMode==='signup'?'active':'')+'" aria-selected="'+(authMode==='signup')+'">إنشاء حساب</button></div>'+
+ '<form id="story-login-form" class="story-auth-form" autocomplete="on">'+
+ '<div class="story-auth-field"><label for="story-email">البريد الإلكتروني</label><div class="story-auth-input-wrap"><span class="story-auth-input-icon" aria-hidden="true">✉</span><input id="story-email" type="email" inputmode="email" autocomplete="email" name="email" dir="ltr" required placeholder="exemple@gmail.com" value="'+safe(authEmail)+'"></div></div>'+
+ (!recover?'<div class="story-auth-field"><label for="story-password">كلمة السر</label><div class="story-auth-input-wrap"><span class="story-auth-input-icon" aria-hidden="true">♧</span><input id="story-password" type="password" name="password" autocomplete="'+(signup?'new-password':'current-password')+'" minlength="'+(signup?'8':'6')+'" required placeholder="كلمة السر متاعك"><button type="button" class="story-password-toggle" data-story-auth="toggle-pass">إظهار</button></div></div>':'')+
+ '<button type="submit" id="story-auth-submit" class="story-auth-submit" '+(busy?'disabled':'')+'>'+(busy?'جاري التثبّت…':recover?'إرسال رابط الاسترجاع':signup?'إنشاء حسابي':'دخول إلى عمرتي')+'</button>'+
+ '</form>'+
+ '<div class="story-auth-support">'+
+ (!recover?'<button type="button" data-story-auth-mode="recover">نسيت كلمة السر؟</button>':'<button type="button" data-story-auth-mode="login">رجوع للدخول</button>')+
+ (pendingConfirmation?'<button type="button" data-story-auth="resend">إعادة إرسال تأكيد البريد</button>':'')+
+ '</div>'+
+ '<p class="story-auth-privacy">🔒 حسابك خاص بيك. عمرتك ما تظهر كان بعد ربط الكود اللي تعطيهولك الوكالة. ما تبعثش كلمة السر لأي حد.</p></section>';
 }
 function linkPage(){
  return '<section class="card story-panel"><div class="story-symbol">🎟️</div><h2>اربط رحلتك بملفّك</h2><p>مرحبًا '+safe(user.email||'')+'. اطلب Code privé من Walid Voyages، أدخلو مرّة واحدة، وتظهرلك عمرتك المسجّلة.</p>'+badge()+
@@ -94,21 +110,55 @@ function pageHtml(){
  (!configured?'<div class="card story-panel">خدمة حسابات المعتمرين غير متاحة حاليًا.</div>':!user?loginPage():loading?'<div class="card story-panel">جاري تحميل رحلتك الخاصة…</div>':!invite?linkPage():journeyPage());
 }
 async function handleLogin(event){
- event.preventDefault();if(busy)return;busy=true;
- const button=event.submitter,mode=button?.value||'login';
- const form=new FormData(event.target),email=String(form.get('email')||'').trim(),password=String(form.get('password')||'');
+ event.preventDefault();if(busy||!db)return;
+ const form=new FormData(event.target),email=String(form.get('email')||'').trim().toLowerCase(),password=String(form.get('password')||'');
+ authEmail=email;busy=true;error='';message='';
+ const submit=document.getElementById('story-auth-submit');
+ if(submit){submit.disabled=true;submit.textContent='جاري التثبّت…'}
  try{
-  if(mode==='signup'){
-   const result=await db.auth.signUp({email,password});
-   if(result.error)throw result.error;
-   if(!result.data.session){notify('تسجّل الحساب. افتح البريد الإلكتروني وأكّد الحساب وبعد اعمل Login.');return}
-   user=result.data.user;await reload();notify('مرحبا بيك! توا اربط كود العمرة متاعك.');
+  if(authMode==='recover'){
+   const r=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname+'#more/story'});
+   if(r.error)throw r.error;
+   notify('إذا الإيميل مسجّل، تصلك رسالة باش تبدّل كلمة السر. تفقّد صندوق الوارد والـSpam.');
+  }else if(authMode==='signup'){
+   const r=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname+'#more/story'}});
+   if(r.error)throw r.error;
+   if(!r.data?.session){
+    pendingConfirmation=true;
+    notify('تمّ إرسال طلب التسجيل. إذا تأكيد البريد مفعل في Supabase، افتح إيميلك واضغط على رابط التأكيد وبعد اعمل Login.');
+   }else{
+    user=r.data.user;pendingConfirmation=false;await reload();
+    notify('تمّ إنشاء الحساب. توا اطلب كود عمرتك الخاص من الوكالة.');
+   }
   }else{
    const r=await db.auth.signInWithPassword({email,password});
-   if(r.error)throw r.error;
-   user=r.data.user;await reload();notify('تمّ الدخول بنجاح.');
+   if(r.error){
+    const raw=String(r.error.message||'').toLowerCase();
+    const translation=/email not confirmed|email_not_confirmed/.test(raw)
+      ?'الإيميل مازال ما تأكّدش. افتح رسالة التأكيد في بريدك، أو اضغط إعادة الإرسال.'
+      :/invalid login credentials|invalid_credentials/.test(raw)
+      ?'الإيميل أو كلمة السر غير صحيحين، أو الحساب مازال ما تفعّلش. تأكد من الحساب واسترجع كلمة السر إذا لزم.'
+      :/rate limit|too many/.test(raw)
+      ?'محاولات كثيرة. جرّب بعد شوية أو استعمل استرجاع كلمة السر.'
+      :r.error.message;
+    if(/email not confirmed|email_not_confirmed/.test(raw))pendingConfirmation=true;
+    throw new Error(translation);
+   }
+   user=r.data.user;pendingConfirmation=false;
+   await reload();
+   notify('تمّ الدخول بنجاح. إذا ما عندكش رحلة مربوطة، اطلب كود المعتمر من الوكالة.');
   }
- }catch(e){notify('تعذّر الدخول: '+String(e.message||e).slice(0,180),true)}
+ }catch(e){notify('تعذّر إكمال العملية: '+String(e.message||e).slice(0,220),true)}
+ finally{busy=false;const b=document.getElementById('story-auth-submit');if(b){b.disabled=false;if(b.textContent==='جاري التثبّت…')b.textContent=authMode==='signup'?'إنشاء حسابي':authMode==='recover'?'إرسال رابط الاسترجاع':'دخول إلى عمرتي'}}
+}
+async function resendConfirmation(){
+ if(!db||!authEmail){notify('اكتب البريد الإلكتروني متاعك الأول.',true);return}
+ if(busy)return;busy=true;
+ try{
+  const r=await db.auth.resend({type:'signup',email:authEmail,options:{emailRedirectTo:location.origin+location.pathname+'#more/story'}});
+  if(r.error)throw r.error;
+  notify('إذا الحساب يستحق تأكيد، تتبعثلك رسالة جديدة على الإيميل. تأكد من Spam أيضًا.');
+ }catch(e){notify('تعذّر إعادة الإرسال: '+String(e.message||e).slice(0,200),true)}
  finally{busy=false}
 }
 async function handleCode(event){
@@ -156,6 +206,23 @@ document.addEventListener('submit',e=>{
  else if(e.target.id==='story-stop-form')saveStop(e);
 });
 document.addEventListener('click',e=>{
+ const tab=e.target.closest('[data-story-auth-mode]');
+ if(tab){
+  authMode=tab.dataset.storyAuthMode;
+  const email=document.getElementById('story-email');
+  if(email)authEmail=email.value.trim();
+  error='';message='';update();return;
+ }
+ const control=e.target.closest('[data-story-auth]');
+ if(control){
+  const action=control.dataset.storyAuth;
+  if(action==='toggle-pass'){
+   const input=document.getElementById('story-password');
+   if(input){input.type=input.type==='password'?'text':'password';control.textContent=input.type==='password'?'إظهار':'إخفاء'}
+  }
+  if(action==='resend')resendConfirmation();
+  return;
+ }
  const step=e.target.closest('[data-story-stop]');
  if(step){editKey=step.dataset.storyStop;error='';message='';update();return}
  const b=e.target.closest('[data-story]');
