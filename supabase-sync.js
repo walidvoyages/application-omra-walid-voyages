@@ -3,25 +3,29 @@
 const cfg=window.WALID_SUPABASE_CONFIG||{};
 if(!/^https:\/\/[a-z0-9.-]+\.supabase\.co\/?$/.test(cfg.url||'')||!cfg.anonKey||!window.supabase)return;
 const client=window.supabase.createClient(cfg.url,cfg.anonKey);
-const map=p=>({id:p.id,title:p.title,start:p.start_date,end:p.end_date,airline:p.airline||'',route:p.route||'',hotel:p.hotel||'',description:p.description||'',image_url:p.image_url||'',price:p.price_tnd==null?null:Number(p.price_tnd),tag:p.tag||'عمرة',published_at:p.published_at||null});
+const map=p=>({id:p.id,title:p.title,start:p.start_date,end:p.end_date,airline:p.airline||'',route:p.route||'',hotel:p.hotel||'',description:p.description||'',image_url:p.image_url||'',price:p.price_tnd==null?null:Number(p.price_tnd),tag:p.tag||'عمرة',published_at:p.published_at||null,created_at:p.created_at||null});
 let refreshing=false;
 async function refresh(){
  if(refreshing)return;refreshing=true;
  try{
   // published_at is added by supabase/reminder-settings.sql.
   // Backward compatible fallback while SQL migration is awaiting execution.
-  let result=await client.from('omra_programs').select('id,title,start_date,end_date,airline,route,hotel,description,image_url,price_tnd,tag,published_at').eq('is_published',true).order('start_date').limit(200);
+  let result=await client.from('omra_programs').select('id,title,start_date,end_date,airline,route,hotel,description,image_url,price_tnd,tag,published_at,created_at').eq('is_published',true).order('start_date').limit(200);
   let hasPublicationColumn=true;
   if(result.error&&(/published_at|PGRST204|42703|schema cache/i.test(result.error.message+' '+result.error.code))){
    hasPublicationColumn=false;
-   result=await client.from('omra_programs').select('id,title,start_date,end_date,airline,route,hotel,description,image_url,price_tnd,tag').eq('is_published',true).order('start_date').limit(200);
+   result=await client.from('omra_programs').select('id,title,start_date,end_date,airline,route,hotel,description,image_url,price_tnd,tag,created_at').eq('is_published',true).order('start_date').limit(200);
   }
   if(result.error)throw result.error;
   const trips=(result.data||[]).map(map);
   window.__omraBackendTrips=trips;
-  // Only name something "latest published" if we have genuine publication timestamps.
-  const dated=trips.filter(t=>t.published_at).sort((a,b)=>new Date(b.published_at)-new Date(a.published_at));
-  window.WVLatestPublished=hasPublicationColumn&&dated.length?dated[0]:null;
+  // Publish date when available; creation date fallback if the optional migration
+  // hasn't been run. The result is an ordered, deduplicated news feed of trips
+  // published by the admin (drafts aren't fetched at all).
+  const timestamp=t=>Date.parse(t.published_at||t.created_at||'')||0;
+  const ordered=[...trips].sort((a,b)=>timestamp(a)-timestamp(b)||String(a.id).localeCompare(String(b.id)));
+  window.WVPublishedAnnouncements=ordered.slice(-10); // newest appears last
+  window.WVLatestPublished=hasPublicationColumn&&ordered.some(t=>t.published_at)?ordered.filter(t=>t.published_at).at(-1):null;
   window.WVProgramSourceConnected=true;
   try{localStorage.setItem('wv-db-trips',JSON.stringify({at:Date.now(),trips}))}catch{}
   state.content={...(state.content||read('content',{ticker:[],slides:[],programs:[]})),programs:trips};
@@ -33,6 +37,7 @@ async function refresh(){
    const cache=JSON.parse(localStorage.getItem('wv-db-trips')||'null');
    if(cache&&Array.isArray(cache.trips)){
     window.__omraBackendTrips=cache.trips;
+    window.WVPublishedAnnouncements=[...cache.trips].sort((a,b)=>(Date.parse(a.published_at||a.created_at||'')||0)-(Date.parse(b.published_at||b.created_at||'')||0)).slice(-10);
     state.content={...(state.content||read('content',{ticker:[],slides:[],programs:[]})),programs:cache.trips};
     render();
    }

@@ -1,4 +1,4 @@
-const CACHE='walid-omra-v11';
+const CACHE='walid-omra-v12';
 const APP=['./','./index.html','./styles.css','./app.js','./content.json','./icon.svg','./manifest.webmanifest','./config.js','./supabase-sync.js','./admin.html','./admin.css','./admin.js','./reminders.js','./adhkar.js','./schedule.js','./omra-logo.webp','./quiz-omra.js','./hero-kaaba.svg'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP)).then(()=>self.skipWaiting()));
