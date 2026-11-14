@@ -201,3 +201,40 @@
 #main .story-extra-selected a{overflow-wrap:anywhere}
 #main .story-extra-photos{min-width:0;max-width:100%}
 @media(max-width:390px){#main .story-extra-selected{padding:11px}#main .story-extra-toggle{gap:8px!important;padding:10px 8px}#main .story-extra-selected .story-extra-upload{padding:10px}}
+
+
+/* v21: family follower without email + optional pilgrim avatar */
+.ff-header,.ff-panel,.ff-person,.ff-stop{padding:17px 15px;margin:0 0 13px;min-width:0;overflow:hidden;direction:rtl}
+.ff-header{text-align:center;background:linear-gradient(140deg,#eef9ff,#f5fae7);display:grid;gap:7px}
+.ff-header h2{font-size:20px;font-weight:900;color:#114b62}
+.ff-header p,.ff-panel p,.ff-person p{font-size:12px;line-height:1.85;color:#527180}
+.ff-symbol{font-size:32px}
+.ff-form{display:grid;gap:11px}
+.ff-form label{font-size:13px;font-weight:900;color:#24516b}
+.ff-form input{width:100%;min-width:0;border:1px solid #cfe2ea;border-radius:14px;padding:13px;font:inherit;font-size:12px;color:#164861;background:#fff;direction:ltr;text-align:center}
+.ff-form button{min-height:49px}
+.ff-note{font-size:11px!important;color:#708b9a!important;line-height:1.9}
+.ff-person{display:grid;gap:12px}
+.ff-person-head{display:flex;align-items:center;gap:14px;min-width:0}
+.ff-person-head>div{flex:1;min-width:0}
+.ff-person-head small{font-size:11px;color:#418ba8}
+.ff-person-head h3{font-size:18px;color:#144f68;line-height:1.8}
+.ff-avatar,.ff-avatar-placeholder{width:69px;height:69px;flex:0 0 69px;display:grid;place-items:center;border-radius:23px;object-fit:cover;background:#e9f5fa;font-size:30px}
+.ff-timeline{display:grid;gap:10px}
+.ff-stop{display:grid;gap:8px}
+.ff-stop h3{font-size:15px;color:#144e66;line-height:1.8}
+.ff-stop small{font-size:11px;color:#7a929d;line-height:1.8}
+.ff-stop p{font-size:12px;line-height:1.9;overflow-wrap:anywhere}
+.ff-map{font-size:12px;color:#137eaf;text-decoration:underline;font-weight:850}
+.ff-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ff-gallery img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.story-owner-avatar{position:relative;width:64px;height:64px;flex:0 0 64px;min-width:0}
+.story-owner-avatar-image{width:64px;height:64px;background:#e7f4fe;border-radius:19px;overflow:hidden;display:grid;place-items:center}
+.story-owner-avatar-image img{width:100%;height:100%;object-fit:cover}
+.story-owner-avatar-image span{font-size:31px}
+.story-owner-avatar-edit{position:absolute;bottom:-5px;left:-6px;background:#b5d33f;border:2px solid #fff;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;cursor:pointer;font-size:14px}
+.story-owner-avatar-edit input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+#main .story-profile-head{min-width:0}
+#main .story-profile-head>div:nth-child(2){min-width:0;flex:1;overflow-wrap:anywhere}
+#main .story-profile-head small{overflow-wrap:anywhere}
+@media(max-width:390px){.ff-header,.ff-panel,.ff-person,.ff-stop{padding:14px 12px}}
