@@ -107,7 +107,7 @@ function journeyPage(){
 }
 function pageHtml(){
  return viewTitle('عمرتي حكاية','رحلتي، مراحلي وذكرياتي الخاصة')+
- (!configured?'<div class="card story-panel">خدمة حسابات المعتمرين غير متاحة حاليًا.</div>':!user?loginPage():loading?'<div class="card story-panel">جاري تحميل رحلتك الخاصة…</div>':!invite?linkPage():journeyPage());
+ (!configured?'<div class="card story-panel">خدمة حسابات المعتمرين غير متاحة حاليًا.</div>':!user?loginPage():loading?'<div class="card story-panel">جاري تحميل رحلتك الخاصة…</div>':!invite?linkPage():journeyPage())+(window.WVStoryExtras?.render?.()||'');
 }
 async function handleLogin(event){
  event.preventDefault();if(busy||!db)return;
@@ -232,6 +232,6 @@ document.addEventListener('click',e=>{
  if(b.dataset.story==='close'){editKey='';update()}
  if(b.dataset.story==='logout'){if(db)db.auth.signOut().then(()=>{user=null;invite=null;trip=null;stops=[];editKey='';message='';error='';update()})}
 });
-window.WVStory={pageHtml,hasAccount:()=>!!user,hasJourney:()=>!!invite};
+window.WVStory={pageHtml,hasAccount:()=>!!user,hasJourney:()=>!!invite,refresh:reload,refreshView:update};
 boot();
 })();
