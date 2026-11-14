@@ -3,7 +3,7 @@
 'use strict';
 const cfg=window.WALID_SUPABASE_CONFIG||{};
 if(!window.supabase||!cfg.url||!cfg.anonKey)return;
-const sb=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{storageKey:'wv-client-auth'}});
+const sb=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{storageKey:'wv-client-auth',detectSessionInUrl:false}});
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let user=null,owner=null,viewer=null,stops=[],shared=[],viewers=[],photos=[],urls={},ready=false,loading=false,busy=false,warning='',notice='',issued='',selected='',rev=0,avatarUrl='';
 const isMissing=e=>/PGRST205|PGRST202|schema cache|Could not find the (table|function)/i.test(e?.message||'');
