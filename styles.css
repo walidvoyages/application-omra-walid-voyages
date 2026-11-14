@@ -147,3 +147,29 @@
 .story-checkbox{display:flex;align-items:center;gap:8px}.story-checkbox input{width:19px;height:19px;accent-color:#83b829}
 .story-edit-card textarea{resize:vertical;min-height:110px}
 .story-bottom{padding:18px}.story-bottom p{font-size:11px;color:#6f8a96}.story-bottom button{margin-top:9px}
+
+/* My Omra Story: media / opt-in family sharing v18 */
+.story-extra-panel{margin:14px 0;padding:19px 16px;display:flex;flex-direction:column;gap:12px;min-width:0;direction:rtl}
+.story-extra-panel h2{font-size:17px;color:#14516b;line-height:1.8;margin:0}
+.story-extra-panel p{font-size:12px;line-height:1.9;color:#496c7b;margin:0}
+.story-extra-panel small,.story-extra-hint{font-size:11px;color:#718c9a;line-height:1.9;display:block}
+.story-extra-panel label{font-weight:800;font-size:12px;color:#204d63}
+.story-extra-panel select,.story-extra-panel input:not([type=file]){min-width:0;width:100%;font:inherit;font-size:13px;border:1px solid #cce1ea;border-radius:12px;background:#f8fcff;padding:12px;color:#173e51}
+.story-extra-form{display:grid;gap:10px}
+.story-extra-selected{display:flex;flex-direction:column;gap:12px;background:#f7fbfd;padding:14px;border:1px solid #e0edf1;border-radius:16px}
+.story-extra-selected strong{font-size:13px;color:#164d6b}
+.story-extra-selected>a,.story-extra-feed>a{color:#087eac;font-size:12px;font-weight:850;text-decoration:underline}
+.story-extra-toggle{display:flex;gap:9px;align-items:flex-start;line-height:2;font-size:12px!important}
+.story-extra-toggle input{width:18px;height:18px;accent-color:#96bf27;flex:none;margin-top:5px}
+.story-extra-upload{padding:12px;background:#e8f4ff;border:1px dashed #66b5df;border-radius:13px;display:grid;gap:8px;cursor:pointer}
+.story-extra-upload input{font-size:11px;max-width:100%;font-weight:400}
+.story-extra-photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.story-extra-photo{aspect-ratio:1;min-width:0;border-radius:10px;overflow:hidden;background:#e8f2f5;position:relative;display:grid;place-items:center}
+.story-extra-photo img{width:100%;height:100%;object-fit:cover}
+.story-extra-photo button{position:absolute;top:4px;left:4px;background:#152f40db;color:white;border:0;border-radius:50%;height:23px;width:23px;cursor:pointer}
+.story-extra-code{font-size:12px;direction:ltr;display:block;word-break:break-word;text-align:center;background:#eff8d5;color:#244d4c;border-radius:12px;padding:12px}
+.story-extra-viewer{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #e4eff2;font-size:11px}
+.story-extra-feed{display:grid;gap:9px;border-top:1px solid #e0e9ee;padding:15px 0}
+.story-extra-feed h3{font-size:14px;margin:0}
+.story-extra-feed p{color:#315763}
+@media(max-width:400px){.story-extra-panel{padding:15px 12px}.story-extra-viewer{flex-wrap:wrap}}
