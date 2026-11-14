@@ -119,6 +119,39 @@ async function changeShare(value){
  }catch(e){notify(String(e.message||e),true)}
  finally{busy=false}
 }
+async function uploadForKey(key,files){
+ const ctx=window.WVStory?.getMediaContext?.(key);
+ if(!ctx||!files?.length){notify('لازم تربط عمرة بحسابك باش تزيد صور.',true);return}
+ if(busy)return;
+ busy=true;let saved=0;let stopId=ctx.step.storedId;
+ try{
+  if(!stopId){
+   const r=await sb.from('omra_story_stops').insert({invite_id:ctx.inviteId,owner_id:ctx.userId,stop_key:ctx.step.key,title:ctx.step.title,sequence:ctx.step.order,note:''}).select('id').single();
+   if(r.error)throw r.error;
+   stopId=r.data.id;
+  }
+  for(const file of Array.from(files).slice(0,5)){
+   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||!file.size||file.size>6*1024*1024)throw new Error('نقبل تصاور JPG / PNG / WEBP أقل من 6 ميغا.');
+   const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+   const storagePath=ctx.userId+'/'+ctx.inviteId+'/'+crypto.randomUUID()+'.'+ext;
+   const up=await sb.storage.from('wv-omra-private').upload(storagePath,file,{contentType:file.type,upsert:false});
+   if(up.error)throw up.error;
+   const ins=await sb.from('omra_story_photos').insert({invite_id:ctx.inviteId,stop_id:stopId,owner_id:ctx.userId,storage_path:storagePath});
+   if(ins.error){await sb.storage.from('wv-omra-private').remove([storagePath]);throw ins.error}
+   saved++;
+  }
+  await window.WVStory?.refresh?.();
+  notify('تزادوا '+saved+' تصاور في المحطة ✅');
+ }catch(e){
+  if(stopId&&!ctx.step.storedId)await window.WVStory?.refresh?.();
+  notify('تزادوا '+saved+' صور. '+(isMissing(e)?'يلزم تفعيل SQL الصور والعائلة في Supabase.':String(e.message||e).slice(0,140)),true);
+ }finally{busy=false}
+}
+function renderPhotosForKey(key){
+ const ctx=window.WVStory?.getMediaContext?.(key);
+ if(!ctx?.step.storedId)return '';
+ return album(ctx.step.storedId);
+}
 async function upload(files){
  const s=chosenStop();if(!s||busy||!files?.length)return;
  busy=true;let saved=0;
@@ -172,6 +205,7 @@ async function claim(e){
 }
 document.addEventListener('submit',e=>{if(e.target.id==='extra-claim')claim(e)});
 document.addEventListener('change',e=>{
+ if(e.target.matches('[data-story-photo-upload]')){uploadForKey(e.target.dataset.storyPhotoUpload,e.target.files);return}
  if(e.target.id==='extra-stop-select'){selected=e.target.value;update()}
  if(e.target.id==='extra-share')changeShare(e.target.checked);
  if(e.target.id==='extra-upload')upload(e.target.files);
@@ -185,6 +219,6 @@ document.addEventListener('click',e=>{
  if(rv)revoke(rv.dataset.extraRevoke);
 });
 sb.auth.onAuthStateChange(()=>{Promise.resolve().then(reload)});
-window.WVStoryExtras={render,reload};
+window.WVStoryExtras={render,reload,renderPhotosForKey};
 reload();
 })();
