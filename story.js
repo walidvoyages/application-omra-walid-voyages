@@ -271,6 +271,7 @@ document.addEventListener('click',e=>{
  const tab=e.target.closest('[data-story-auth-mode]');
  if(tab){
   authMode=tab.dataset.storyAuthMode;
+  if(recoveryLinkError)recoveryActive=false;
   const email=document.getElementById('story-email');
   if(email)authEmail=email.value.trim();
   error='';message='';update();return;
