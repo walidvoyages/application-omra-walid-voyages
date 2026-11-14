@@ -184,3 +184,20 @@
 .story-media-inline p,.story-media-inline small{font-size:11px;line-height:1.8;color:#527a8d}
 .story-photo-picker{display:grid;gap:8px;padding:13px;border:1px dashed #4daade;border-radius:12px;background:#e9f5fd;color:#13577f;font-size:13px!important;font-weight:900;cursor:pointer}
 .story-photo-picker input{display:block;max-width:100%;font-size:11px}
+
+
+/* Mobile RTL layout repair for family-sharing checkbox and image picker */
+#main .story-extra-panel,
+#main .story-extra-selected,
+#main .story-extra-selected>*{box-sizing:border-box;min-width:0;max-width:100%}
+#main .story-extra-selected{width:100%;overflow-wrap:anywhere}
+#main .story-extra-toggle{display:flex!important;flex-direction:row!important;align-items:flex-start!important;justify-content:flex-start!important;gap:11px!important;width:100%;max-width:100%;white-space:normal!important;line-height:1.9!important;direction:rtl;text-align:right;margin:0;padding:11px 10px;border:1px solid #dcecf2;background:#fff;border-radius:13px;cursor:pointer}
+#main .story-extra-selected .story-extra-toggle input[type="checkbox"]{display:block!important;position:static!important;flex:0 0 19px!important;min-width:19px!important;max-width:19px!important;width:19px!important;height:19px!important;margin:4px 0 0!important;padding:0!important;accent-color:#91bf25;appearance:auto}
+#main .story-extra-toggle span{display:block!important;flex:1 1 auto!important;min-width:0!important;max-width:100%;font-size:12px!important;font-weight:750;line-height:1.9!important;overflow-wrap:anywhere;white-space:normal!important}
+#main .story-extra-selected .story-extra-upload{width:100%;max-width:100%;min-width:0;overflow:hidden;box-sizing:border-box;padding:14px;line-height:1.8}
+#main .story-extra-selected .story-extra-upload input[type="file"]{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;font-size:11px;color:#245268;direction:ltr;text-align:left}
+#main .story-extra-selected .story-extra-upload input[type="file"]::file-selector-button{border:0;border-radius:9px;background:#49aae3;color:#fff;padding:9px 12px;margin-right:9px;font:inherit;font-weight:850;cursor:pointer}
+#main .story-extra-selected button.btn{width:100%;min-height:46px;white-space:normal;line-height:1.6;padding:11px 12px}
+#main .story-extra-selected a{overflow-wrap:anywhere}
+#main .story-extra-photos{min-width:0;max-width:100%}
+@media(max-width:390px){#main .story-extra-selected{padding:11px}#main .story-extra-toggle{gap:8px!important;padding:10px 8px}#main .story-extra-selected .story-extra-upload{padding:10px}}
