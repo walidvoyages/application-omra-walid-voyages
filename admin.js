@@ -212,7 +212,7 @@ const availableAdhkarCategories=[
 async function loadStoryInvites(){
  view='story-invites';inviteError='';revealedInvite='';errorMsg('');
  const r=await sb.from('omra_story_invites').select('id,program_id,customer_name,linked_user_id,claimed_at,issued_at,expires_at,revoked_at').order('issued_at',{ascending:false}).limit(150);
- if(r.error)inviteError='قاعدة بيانات المعتمرين مازالت موش مفعّلة. نفّذ supabase/story-and-adhkar.sql في SQL Editor. ('+esc(r.error.code||r.error.message||'')+')';
+ if(r.error)inviteError='قاعدة بيانات المعتمرين مازالت موش مفعّلة. افتح ملف supabase/story-and-adhkar.sql في GitHub، انسخ محتواه ونفّذو في Supabase → SQL Editor → Run. ('+esc(r.error.code||r.error.message||'')+')';
  storyInvites=r.data||[];paint();
 }
 function storyInvitesPage(){
@@ -220,10 +220,10 @@ function storyInvitesPage(){
  root.innerHTML='<div class="card" style="max-width:850px;margin:18px auto">'+brand+
  '<header class="head"><div><h1>🕋 حسابات المعتمرين</h1><p class="muted">إنشاء كود خاص بكل حريف وربطو ببرنامج عمرة منشور</p></div><button class="btn light" id="invites-back">رجوع</button></header>'+
  (inviteError?'<p class="alert">'+esc(inviteError)+'</p>':'')+alerts()+
- (revealedInvite?'<div class="admin-secret"><strong>الكود الخاص — انسخو توّا وابعثو للحريف بطريقة آمنة</strong><p>ما يبانش الكود هذا مرّة ثانية في الإدارة. ما تنشروش للعموم.</p><code id="invite-token" dir="ltr">'+esc(revealedInvite)+'</code><button id="copy-invite" class="btn primary" type="button">نسخ الكود</button></div>':'')+
+ (revealedInvite?'<div class="admin-secret"><strong>كود العمرة الخاص — انسخو توّا وابعثو للحريف عبر WhatsApp أو Email بطريقة آمنة</strong><p>ما يبانش الكود هذا مرّة ثانية في الإدارة. ما تنشروش للعموم.</p><code id="invite-token" dir="ltr">'+esc(revealedInvite)+'</code><button id="copy-invite" class="btn primary" type="button">نسخ الكود</button></div>':'')+
  '<section class="card"><h2>إنشاء دعوة لحريف</h2><form id="create-story-invite" class="formgrid"><div class="group"><label>اسم المعتمر (للعرض في ملفّه)</label><input name="customer" maxlength="150" required minlength="2" placeholder="الاسم واللقب"></div>'+
  '<div class="group"><label>العمرة اللي مسجّل فيها</label><select name="program" required>'+published.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.title)+' — '+esc(p.start_date)+'</option>').join('')+'</select></div>'+
- '<div class="span2 buttons"><button class="btn primary" type="submit" '+(!published.length||!!inviteError?'disabled':'')+'>إنشاء كود خاص</button></div></form><p class="hint">الحريف يعمل حساب Email / Mot de passe ثم يدخل الكود. الكود يتربط بأول حساب يستعملو، ومن بعد ما ينجمش شخص آخر يستعملو.</p></section>'+
+ '<div class="span2 buttons"><button class="btn primary" type="submit" '+(!published.length||!!inviteError?'disabled':'')+'>إنشاء كود خاص</button></div></form><p class="hint">الحريف يعمل حساب Email / Mot de passe ثم يدخل الكود القصير متاعو في «عمرتي حكاية». الكود يتربط بأول حساب يستعملو، ومن بعد ما ينجمش شخص آخر يستعملو.</p></section>'+
  '<section class="card"><h2>الدعوات والحرفاء</h2><div class="tablewrap"><table><thead><tr><th>المعتمر</th><th>الرحلة</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>'+
  (storyInvites.length?storyInvites.map(i=>'<tr><td>'+esc(i.customer_name)+'</td><td>'+esc(items.find(p=>p.id===i.program_id)?.title||'برنامج')+'</td><td>'+ (i.revoked_at?'ملغاة':i.linked_user_id?'حساب مرتبط':'لم يستعمل الكود بعد')+'</td><td>'+(i.revoked_at?'—':'<button class="btn danger small" data-revoke-invite="'+esc(i.id)+'">إلغاء الدعوة</button>')+'</td></tr>').join(''):'<tr><td colspan="4">ما فماش دعوات بعد.</td></tr>')+
  '</tbody></table></div></section></div>';
