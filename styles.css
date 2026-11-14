@@ -106,3 +106,44 @@
 .azkar-favorite.on{color:#ad3a53;border-color:#f0d2d9;background:#fff0f3}
 .azkar-load{margin:15px 0;width:100%}
 .azkar-empty{text-align:center;padding:23px 12px;font-size:12px;color:#597a8d}
+
+/* My Omra Story - personal journey */
+.story-panel,.story-profile{padding:20px 16px;display:grid;gap:12px}
+.story-panel h2{font-size:19px;color:#163a64;text-align:center}.story-panel>p{font-size:12px;color:#64869a;text-align:center}
+.story-symbol{font-size:37px;text-align:center}
+.story-form{display:grid;gap:9px;margin:4px 0}
+.story-form label{font-size:12px;font-weight:800;color:#244b63}
+.story-form input,.story-new-stop input,.story-edit-card textarea{width:100%;font:inherit;font-size:12px;padding:11px 12px;border-radius:12px;border:1px solid #d1e5ec;background:#fafdff;color:#1c465d}
+.story-form input[dir=ltr]{text-align:left}
+.story-form-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:7px}
+.story-form-actions button{flex:1;min-width:110px}
+.story-hint{font-size:10px;color:#638295;line-height:1.75}
+.story-feedback{font-size:11px;line-height:1.9;border-radius:12px;padding:10px 12px;margin:10px 0}
+.story-feedback.good{background:#eef8dd;color:#4d7124}
+.story-feedback.bad{background:#fff0ee;color:#ad4034}
+.story-link{border:0;background:none;color:#1083a7;font-weight:800;font-size:11px;text-decoration:underline;margin:5px auto}
+.story-profile-head{display:flex;align-items:center;gap:14px}
+.story-profile-head>span{font-size:32px;display:grid;place-items:center;width:57px;height:57px;background:#e7f4fe;border-radius:18px}
+.story-profile-head h2{font-size:17px}.story-profile-head small{font-size:11px;color:#6b889a}
+.story-trip{padding:13px;background:linear-gradient(130deg,#167faf,#084d7a);color:#fff;border-radius:15px;display:grid;gap:6px}
+.story-trip>span{font-size:12px}.story-trip>strong{font-size:17px}.story-trip small{font-size:11px;color:#e3f7ff}
+.story-progress{display:grid;gap:6px;font-size:12px}
+.story-intro{font-size:11px;color:#6e8997;line-height:1.85;margin:5px 0 12px}
+.story-timeline{display:grid;gap:9px;position:relative}
+.story-stop{display:flex;align-items:center;text-align:right;gap:12px;width:100%;padding:13px 10px;border:1px solid #dce9ed;background:#fff}
+.story-stop.visited{border-color:#bbdca6;background:#f8fcf0}
+.story-stop-icon{display:grid;place-items:center;width:41px;height:41px;border-radius:13px;background:#eaf6fe;flex:none;font-size:23px}
+.story-stop.visited .story-stop-icon{background:#e5f1d7}
+.story-stop-info{display:grid;gap:4px;flex:1;min-width:0}
+.story-stop-info>strong{font-size:12px;color:#1d5266}
+.story-stop-info>small{font-size:10px;color:#7391a1;line-height:1.6}
+.story-stop-info .story-note-preview{color:#406f83}
+.story-new-stop{background:#f6fbff;border:1px solid #d9e8f4;border-radius:15px;padding:14px;margin-top:13px;display:grid;gap:8px}
+.story-new-stop label{font-size:12px;font-weight:800}
+.story-edit-overlay{position:fixed;inset:0;z-index:90;background:#032c42a8;display:grid;place-items:center;padding:20px}
+.story-edit-card{width:100%;max-width:440px;max-height:88vh;overflow-y:auto;padding:20px;display:grid;gap:12px}
+.story-edit-card h3{font-size:17px;color:#155b80}
+.story-edit-card label{font-size:12px;font-weight:800}
+.story-checkbox{display:flex;align-items:center;gap:8px}.story-checkbox input{width:19px;height:19px;accent-color:#83b829}
+.story-edit-card textarea{resize:vertical;min-height:110px}
+.story-bottom{padding:18px}.story-bottom p{font-size:11px;color:#6f8a96}.story-bottom button{margin-top:9px}

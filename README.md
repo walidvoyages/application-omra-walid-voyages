@@ -71,3 +71,13 @@ L'app affiche également les liens de crédit dans À propos. Les photos sont h�
 La bibliothèque locale (`adhkar-library.js`) contient 196 invocations dans 18 catégories. Interface avec recherche, favoris, suivi de lecture local (`localStorage`) et chargement progressif. Aucun compte Supabase ni base de données supplémentaire n'est nécessaire pour le contenu des invocations. Les textes sont des références à relire éditorialement avant de présenter comme collection religieuse vérifiée; pas de nombres de répétition automatiques sans source établie.
 
 Pour ajouter des invocations à l'avenir, étendre le tableau `entries` et éventuellement `categories` dans `adhkar-library.js`, augmenter le numéro de version des scripts et du cache PWA.
+
+## Comptes clients / عمرتي حكاية / ajout d'adhkâr
+
+**Activation manuelle nécessaire:** ouvrir `supabase/story-and-adhkar.sql` dans Supabase SQL Editor et exécuter le fichier avec le rôle propriétaire du projet. Il ajoute les tables `omra_client_profiles`, `omra_story_invites`, `omra_story_stops`, `omra_adhkar_custom`, les fonctions d'invitation sécurisées et un bucket privé pour les photos (interface photo à développer plus tard). Les politiques RLS protègent les données par `auth.uid()`. Aucune nouvelle instance Supabase nécessaire.
+
+**Administration:** depuis `admin.html`, ouvrir «حسابات المعتمرين وكود الرحلة», choisir une Omra publiée et un nom de client, créer un code unique, puis le transmettre au client en privé. Le code n'est visible qu'une seule fois et ne peut être utilisé que pour un seul compte, sauf réutilisation par le même compte. L'admin peut révoquer l'accès. Un lien email/mot de passe en lui-même ne prouve pas une réservation; la réservation est établie par l'invitation attribuée par l'agence.
+
+**Application client:** menu «المزيد» → «عمرتي حكاية». Création/connexion par email et mot de passe (confirmation email selon configuration Supabase). Saisir le code, puis consulter le programme lié à ce compte, marquer les étapes visitées, ajouter des points et des notes sauvegardées dans Supabase. La première version ne télécharge pas encore les photos/vidéos ni les audios; ne pas demander de tels éléments avant l'activation de leur interface dédiée.
+
+**Adhkâr:** menu Admin «إضافة أذكار للتطبيق» avec saisie d'une catégorie, titre, texte, source et statut brouillon/publié. Seuls les contenus approuvés/publiés sont disponibles publiquement. La collection initiale reste intégrée localement (196 entrées) et fonctionne hors ligne; les nouveaux éléments créés via Admin sont synchronisés en ligne.
