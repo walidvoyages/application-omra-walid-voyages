@@ -53,12 +53,14 @@ create policy omra_story_invite_admin_read on public.omra_story_invites
  );
 
 -- The client never queries invitation tokens: only hashes are stored.
--- 64 random hex chars are generated and revealed ONCE to an authorized admin.
+-- New codes use an 80-bit random value: WV-XXXX-XXXX-XXXX-XXXX-XXXX.
+-- Legacy 64-hex codes continue to work. Only a hash is saved; admins see the code once.
 create or replace function public.omra_issue_story_invite(p_program_id uuid,p_customer_name text)
 returns text
 language plpgsql security definer set search_path=''
 as $$
 declare v_token text;
+        v_raw text;
 begin
  if (select auth.uid()) is null or not exists(
    select 1 from public.omra_admins a where a.user_id=(select auth.uid())
@@ -67,9 +69,10 @@ begin
    raise exception 'Please provide a customer name'; end if;
  if not exists(select 1 from public.omra_programs p where p.id=p_program_id and p.is_published=true) then
    raise exception 'Only published Omra programs can be linked'; end if;
- v_token=replace(gen_random_uuid()::text,'-','') || replace(gen_random_uuid()::text,'-','');
+ v_raw=upper(left(replace(gen_random_uuid()::text,'-',''),20));
+ v_token='WV-'||substr(v_raw,1,4)||'-'||substr(v_raw,5,4)||'-'||substr(v_raw,9,4)||'-'||substr(v_raw,13,4)||'-'||substr(v_raw,17,4);
  insert into public.omra_story_invites(program_id,customer_name,token_hash,created_by)
- values(p_program_id,trim(p_customer_name),encode(pg_catalog.sha256(pg_catalog.convert_to(v_token,'UTF8')),'hex'),(select auth.uid()));
+ values(p_program_id,trim(p_customer_name),encode(pg_catalog.sha256(pg_catalog.convert_to(lower(replace(v_token,'-','')),'UTF8')),'hex'),(select auth.uid()));
  return v_token;
 end
 $$;
@@ -81,12 +84,14 @@ returns uuid
 language plpgsql security definer set search_path=''
 as $$
 declare v_invite public.omra_story_invites%rowtype;
+        v_compact text;
 begin
  if (select auth.uid()) is null then raise exception 'Login required' using errcode='42501'; end if;
- if p_token is null or p_token !~ '^[0-9A-Fa-f]{64}$' then
+ v_compact=lower(regexp_replace(trim(coalesce(p_token,'')),'[-[:space:]]','','g'));
+ if v_compact !~ '^wv[0-9a-f]{20}$' and v_compact !~ '^[0-9a-f]{64}$' then
    raise exception 'Invalid invitation code'; end if;
  select * into v_invite from public.omra_story_invites
- where token_hash=encode(pg_catalog.sha256(pg_catalog.convert_to(lower(trim(p_token)),'UTF8')),'hex')
+ where token_hash=encode(pg_catalog.sha256(pg_catalog.convert_to(v_compact,'UTF8')),'hex')
  for update;
  if not found or v_invite.revoked_at is not null or v_invite.expires_at<now() then
    raise exception 'Invitation unavailable or expired'; end if;
@@ -217,3 +222,6 @@ create policy omra_custom_adhkar_admin_delete on public.omra_adhkar_custom
   select 1 from public.omra_admins a where a.user_id=(select auth.uid())));
 
 -- End. Existing public omra_programs and admin accounts are preserved.
+
+-- Ask PostgREST to refresh metadata after this migration.
+select pg_catalog.pg_notify('pgrst','reload schema');
