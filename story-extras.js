@@ -5,7 +5,7 @@ const cfg=window.WALID_SUPABASE_CONFIG||{};
 if(!window.supabase||!cfg.url||!cfg.anonKey)return;
 const sb=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{storageKey:'wv-client-auth'}});
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let user=null,owner=null,viewer=null,stops=[],shared=[],viewers=[],photos=[],urls={},ready=false,loading=false,busy=false,warning='',notice='',issued='',selected='',rev=0;
+let user=null,owner=null,viewer=null,stops=[],shared=[],viewers=[],photos=[],urls={},ready=false,loading=false,busy=false,warning='',notice='',issued='',selected='',rev=0,avatarUrl='';
 const isMissing=e=>/PGRST205|PGRST202|schema cache|Could not find the (table|function)/i.test(e?.message||'');
 const locationUrl=s=>'https://www.google.com/maps?q='+encodeURIComponent(s.latitude+','+s.longitude);
 const stamp=d=>d?new Date(d).toLocaleString('fr-TN'):'';
@@ -27,11 +27,11 @@ async function readPhotos(inviteId){
 }
 async function reload(){
  if(loading)return;
- loading=true;ready=false;warning='';owner=null;viewer=null;stops=[];shared=[];viewers=[];photos=[];urls={};
+ loading=true;ready=false;warning='';owner=null;viewer=null;stops=[];shared=[];viewers=[];photos=[];urls={};avatarUrl='';
  try{
   const a=await sb.auth.getUser();user=a.data?.user||null;
   if(!user){ready=true;return}
-  const own=await sb.from('omra_story_invites').select('id,customer_name,program_id').eq('linked_user_id',user.id).is('revoked_at',null).limit(1);
+  const own=await sb.from('omra_story_invites').select('id,customer_name,program_id,avatar_path').eq('linked_user_id',user.id).is('revoked_at',null).limit(1);
   if(own.error)throw own.error;
   owner=own.data?.[0]||null;
   if(owner){
@@ -41,6 +41,7 @@ async function reload(){
    ]);
    if(s.error)throw s.error;if(v.error)throw v.error;
    stops=s.data||[];viewers=v.data||[];await readPhotos(owner.id);
+   if(owner.avatar_path){const a=await sb.storage.from('wv-omra-private').createSignedUrl(owner.avatar_path,900);avatarUrl=a.data?.signedUrl||'';}
    if(!selected||!stops.some(s=>s.id===selected))selected=stops[0]?.id||'';
   }else{
    const grants=await sb.from('omra_family_viewers').select('invite_id').eq('viewer_user_id',user.id).is('revoked_at',null).limit(1);
@@ -76,9 +77,42 @@ function render(){
  return '<section class="story-extra-panel card"><h2>📸 صور ومواقع ذكريات عمرتي</h2><p class="story-extra-hint">أوّل حاجة، إضغط على محطة من المخطّط وسجّل الزيارة أو ذكرى، وبعد اختارها هنا لإضافة صور أو مشاركة المكان. الموقع يتسجّل كان بموافقتك.</p>'+alert()+
  (stops.length?'<label>المحطة اللي تحب تضيفلها ذكريات</label><select id="extra-stop-select">'+stops.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?'selected':'')+'>'+esc(s.title)+'</option>').join('')+'</select>'+
  (chosen?'<div class="story-extra-selected"><strong>📍 '+esc(chosen.title)+'</strong><label class="story-extra-toggle" for="extra-share"><input type="checkbox" id="extra-share" '+(chosen.share_with_family?'checked':'')+'><span>نسمح لعائلتي تشوف هالمحطة والصور والموقع المسجّل فيها</span></label><label class="story-extra-upload">📸 اختار صور من تليفونك<input type="file" id="extra-upload" accept="image/jpeg,image/png,image/webp" multiple></label><button type="button" class="btn light" data-extra-action="location">📍 سجّل موقعي الحالي في هالمحطة</button>'+(chosen.latitude!=null?'<a href="'+esc(locationUrl(chosen))+'" target="_blank" rel="noopener noreferrer">🗺️ شوف المكان على Google Maps</a><button type="button" class="btn light" data-extra-action="share-location">📤 مشاركة موقع هالمحطة عبر الهاتف / WhatsApp</button><small>الموقع اللي سجلتو · دقّة تقريبية '+Math.round(chosen.location_accuracy_m||0)+' متر</small><button class="btn light" type="button" data-extra-action="clear-location">حذف الموقع المسجّل</button>':'')+album(chosen.id)+'</div>':''):'<p>سجّل أوّل زيارة في مخطّط العمرة، باش تظهر المحطات هنا.</p>')+
- '</section><section class="story-extra-panel card"><h2>👨‍👩‍👧 مشاركة خاصة مع عائلتي</h2><p>تنجم تعطي كل فرد من العائلة كود متابعة مستقل؛ كل واحد يعمل حساب خاص. تظهرلهم كان المحطات اللي تسمح بمشاركتها. تنجم تلغي وصولهم وقت تحب.</p><button type="button" class="btn lime" data-extra-action="issue">إنشاء كود متابعة خاص</button>'+(issued?'<strong class="story-extra-code" dir="ltr">'+esc(issued)+'</strong><button type="button" class="btn light" data-extra-action="copy">نسخ الكود</button><small>كود واحد لكل فرد، صالح 14 يوم، يستعمل مرّة واحدة.</small>':'')+
+ '</section><section class="story-extra-panel card"><h2>👨‍👩‍👧 مشاركة خاصة مع عائلتي</h2><p>تنجم تعطي كل فرد من العائلة كود متابعة مستقل؛ كل واحد يعمل حساب خاص. تظهرلهم كان المحطات اللي تسمح بمشاركتها. تنجم تلغي وصولهم وقت تحب.</p><button type="button" class="btn lime" data-extra-action="issue">إنشاء كود متابعة للعائلة</button><button type="button" class="btn light" data-extra-action="disable-family">إيقاف المتابعة وإلغاء كل الأكواد</button>'+(issued?'<strong class="story-extra-code" dir="ltr">'+esc(issued)+'</strong><button type="button" class="btn light" data-extra-action="copy">نسخ الكود</button><small>نفس الكود ينجم يستعملوه أكثر من فرد من العائلة خلال 14 يوم، وتنجم توقف المتابعة في أي وقت.</small>':'')+
  viewers.filter(v=>!v.revoked_at).map(v=>'<div class="story-extra-viewer"><span>حساب عائلي ···'+esc(v.viewer_user_id.slice(-6))+'</span><button class="btn light" type="button" data-extra-revoke="'+esc(v.viewer_user_id)+'">إلغاء المتابعة</button></div>').join('')+'</section>';
 }
+function profileAvatarHtml(){
+ if(!owner)return '<span>👤</span>';
+ return '<div class="story-owner-avatar"><div class="story-owner-avatar-image">'+(avatarUrl?'<img src="'+esc(avatarUrl)+'" alt="صورة المعتمر" loading="lazy">':'<span>👤</span>')+'</div><label class="story-owner-avatar-edit" title="صورة اختيارية">📷<input type="file" id="story-avatar-input" accept="image/jpeg,image/png,image/webp" aria-label="إضافة أو تغيير صورة البروفايل"></label></div>';
+}
+async function uploadAvatar(files){
+ if(busy||!owner||!user||!files?.length)return;
+ const file=files[0];
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>3*1024*1024||!file.size){notify('صورة البروفايل JPG / PNG / WEBP وأقل من 3 ميغا.',true);return}
+ busy=true;
+ const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+ const path=user.id+'/'+owner.id+'/avatar/'+crypto.randomUUID()+'.'+ext;
+ const previous=owner.avatar_path;
+ try{
+  const up=await sb.storage.from('wv-omra-private').upload(path,file,{contentType:file.type,upsert:false});
+  if(up.error)throw up.error;
+  const r=await sb.rpc('omra_set_story_avatar',{p_invite_id:owner.id,p_path:path});
+  if(r.error){await sb.storage.from('wv-omra-private').remove([path]);throw r.error}
+  if(previous)await sb.storage.from('wv-omra-private').remove([previous]);
+  await reload();notify('تبدّلت صورة البروفايل ✅');
+ }catch(e){notify('تعذّر رفع الصورة: '+String(e.message||e).slice(0,140),true)}
+ finally{busy=false}
+}
+async function disableFamilyAccess(){
+ if(!owner||busy||!confirm('تحب توقف كل أكواد العائلة وتلغي وصول الناس اللي يتابعوك؟'))return;
+ busy=true;
+ try{
+  const r=await sb.rpc('omra_disable_family_access',{p_invite_id:owner.id});
+  if(r.error)throw r.error;
+  issued='';await reload();notify('توقفت متابعة العائلة. تنجم تولّد كود جديد وقت تحب ✅');
+ }catch(e){notify('تعذّر إيقاف المتابعة: '+String(e.message||e).slice(0,140),true)}
+ finally{busy=false}
+}
+
 async function call(action){
  if(!user||busy)return;busy=true;warning='';notice='';
  try{
@@ -101,6 +135,8 @@ async function call(action){
    if(!confirm('تحب تشارك موقع هالمحطة مع شخص تختارو؟ هذا موقع مسجّل، موش بث مباشر.'))return;
    if(navigator.share){await navigator.share({title:'موقع من عمرتي',text,url:locationUrl(s)})}
    else{await navigator.clipboard.writeText(text);notify('تنسخ رابط الموقع. تنجم تبعثه عبر WhatsApp ✅')}
+  }else if(action==='disable-family'){
+   await disableFamilyAccess();
   }else if(action==='clear-location'){
    if(!confirm('تحب تحذف موقع هالمحطة؟'))return;
    const r=await sb.from('omra_story_stops').update({latitude:null,longitude:null,location_accuracy_m:null,location_shared_at:null}).eq('id',selected).eq('owner_id',user.id);
@@ -205,6 +241,7 @@ async function claim(e){
 }
 document.addEventListener('submit',e=>{if(e.target.id==='extra-claim')claim(e)});
 document.addEventListener('change',e=>{
+ if(e.target.id==='story-avatar-input'){uploadAvatar(e.target.files);return}
  if(e.target.matches('[data-story-photo-upload]')){uploadForKey(e.target.dataset.storyPhotoUpload,e.target.files);return}
  if(e.target.id==='extra-stop-select'){selected=e.target.value;update()}
  if(e.target.id==='extra-share')changeShare(e.target.checked);
@@ -219,6 +256,6 @@ document.addEventListener('click',e=>{
  if(rv)revoke(rv.dataset.extraRevoke);
 });
 sb.auth.onAuthStateChange(()=>{Promise.resolve().then(reload)});
-window.WVStoryExtras={render,reload,renderPhotosForKey};
+window.WVStoryExtras={render,reload,renderPhotosForKey,profileAvatarHtml};
 reload();
 })();
