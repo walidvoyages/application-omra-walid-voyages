@@ -2,7 +2,7 @@
 'use strict';
 const cfg=window.WALID_SUPABASE_CONFIG||{};
 if(!/^https:\/\/[a-z0-9.-]+\.supabase\.co\/?$/.test(cfg.url||'')||!cfg.anonKey||!window.supabase)return;
-const client=window.supabase.createClient(cfg.url,cfg.anonKey);
+const client=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{detectSessionInUrl:false}});
 const map=p=>({id:p.id,title:p.title,start:p.start_date,end:p.end_date,airline:p.airline||'',route:p.route||'',hotel:p.hotel||'',description:p.description||'',image_url:p.image_url||'',price:p.price_tnd==null?null:Number(p.price_tnd),tag:p.tag||'عمرة',published_at:p.published_at||null,created_at:p.created_at||null});
 let refreshing=false;
 async function refresh(){
