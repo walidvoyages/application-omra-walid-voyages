@@ -23,10 +23,10 @@
       "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Al%20Masjid%20an%20Nabawi.jpg?width=900"
     },
     {
-      "kicker": "دليلك في كلّ خطوة",
-      "title": "عمرة أسهل،\nوقلب مطمئن",
+      "kicker": "مناسك العمرة خطوة بخطوة",
+      "title": "تعلّم مناسك العمرة\nبقلب مطمئن",
       "subtitle": "تعلّم المناسك وتابع تقدّمك خطوة بخطوة",
-      "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Masjid-Al-Nabawi%20Madinah.jpg?width=900"
+      "image": "./hero-kaaba.svg"
     }
   ],
   "programs": [
