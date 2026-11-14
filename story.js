@@ -44,7 +44,7 @@ async function reload(){
    if(records.error)throw records.error;
    stops=records.data||[];
   }else{stops=[]}
- }catch(e){error='تعذّر تحميل رحلتك: '+String(e.message||e).slice(0,160);invite=null;trip=null;stops=[]}
+ }catch(e){const m=String(e.message||e);error=/PGRST205|PGRST204|schema cache|Could not find the table/i.test(m)?'خدمة ربط العمرة مازالت موش مفعّلة في قاعدة البيانات. إدارة Walid Voyages يلزمها تفعّل إعدادات الرحلات في Supabase.':'تعذّر تحميل رحلتك: '+m.slice(0,160);invite=null;trip=null;stops=[]}
  finally{loading=false;update()}
 }
 async function boot(){
@@ -86,8 +86,8 @@ function loginPage(){
  '<p class="story-auth-privacy">🔒 حسابك خاص بيك. عمرتك ما تظهر كان بعد ربط الكود اللي تعطيهولك الوكالة. ما تبعثش كلمة السر لأي حد.</p></section>';
 }
 function linkPage(){
- return '<section class="card story-panel"><div class="story-symbol">🎟️</div><h2>اربط رحلتك بملفّك</h2><p>مرحبًا '+safe(user.email||'')+'. اطلب Code privé من Walid Voyages، أدخلو مرّة واحدة، وتظهرلك عمرتك المسجّلة.</p>'+badge()+
- '<form id="story-code-form" class="story-form"><label>الكود الخاص اللي عطاتهولك الوكالة</label><input name="invite" dir="ltr" inputmode="text" autocomplete="off" minlength="64" maxlength="64" pattern="[A-Fa-f0-9]{64}" required placeholder="64 caractères"><button type="submit" class="btn lime full">ربط عمرتي</button></form>'+
+ return '<section class="card story-panel"><div class="story-symbol">🎟️</div><h2>اربط رحلتك بملفّك</h2><p>مرحبًا '+safe(user.email||'')+'. بعد ما تثبّت حجزك، الوكالة تعطيك كود عمرة خاص عبر WhatsApp أو Email. أدخلو مرّة واحدة وتتربط رحلتك بحسابك.</p>'+badge()+
+ '<form id="story-code-form" class="story-form"><label for="story-invite">الكود الخاص اللي عطاتهولك الوكالة</label><input id="story-invite" name="invite" dir="ltr" inputmode="text" autocapitalize="characters" autocomplete="off" spellcheck="false" minlength="22" maxlength="80" required placeholder="WV-XXXX-XXXX-XXXX-XXXX-XXXX"><p class="story-code-help">الكود تلقاه عند وكالة Walid Voyages، موش في إيميل تأكيد الحساب. تنجم تنسخو وتلصقو هنا.</p><button type="submit" class="btn lime full">ربط عمرتي</button></form>'+
  '<button type="button" class="story-link" data-story="logout">الخروج من حسابي</button></section>';
 }
 function journeyPage(){
@@ -164,11 +164,13 @@ async function resendConfirmation(){
 async function handleCode(event){
  event.preventDefault();if(busy||!user)return;busy=true;
  const token=String(new FormData(event.target).get('invite')||'').trim();
+ const normalized=token.replace(/[\s-]/g,'');
+ if(!/^(wv[0-9a-f]{20}|[0-9a-f]{64})$/i.test(normalized)){busy=false;notify('الكود موش صحيح. انسخ الكود كامل كيف ما بعثتهولك الوكالة.',true);return}
  try{
   const result=await db.rpc('omra_claim_story_invite',{p_token:token});
   if(result.error)throw result.error;
   await reload();notify('ربطنا عمرتك بملفك الشخصي ✅');
- }catch(e){notify('ما نجّمش نربط الكود: '+String(e.message||e).slice(0,180),true)}
+ }catch(e){const m=String(e.message||e);notify(/PGRST202|schema cache|Could not find the function/i.test(m)?'خدمة الربط مازالت موش مفعّلة في Supabase. اتصل بوكالة Walid Voyages.':/Invitation unavailable or expired/i.test(m)?'الكود موش موجود، منتهي الصلاحية، أو تلغى. اطلب كود جديد من الوكالة.':/already been used/i.test(m)?'الكود هذا مربوط بحساب آخر. اتصل بالوكالة.':'ما نجّمش نربط الكود: '+m.slice(0,180),true)}
  finally{busy=false}
 }
 async function addStop(event){
