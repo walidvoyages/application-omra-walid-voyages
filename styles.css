@@ -91,3 +91,18 @@
 .wv-contact-links a{direction:ltr;unicode-bidi:isolate;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .wv-contact-links bdi{direction:ltr;unicode-bidi:isolate}
 .wv-phone-icon{font-size:13px}
+
+/* Extended Walid Voyages adhkar library */
+.azkar-library-head{text-align:center;padding:19px 14px;background:linear-gradient(140deg,#e6f5ff,#f5fae8);border:1px solid #d7e9e9}
+.azkar-library-head>span{font-size:29px}.azkar-library-head h2{font-size:19px;color:#163a64;margin:3px 0}
+.azkar-library-head p{font-size:11px;color:#597b8e;line-height:1.85}
+.azkar-search{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #d5e7ed;padding:0 12px;border-radius:13px;margin:13px 0}
+.azkar-search span{font-size:21px;color:#4b9ccc}
+.azkar-search input{flex:1;min-width:0;width:100%;border:0;background:transparent;outline:0;font:inherit;padding:12px 0;font-size:12px;color:#163a64}
+.azkar-count-line{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px;font-size:11px;margin:14px 1px}
+.azkar-count-line strong{color:#155d87}.azkar-count-line span{color:#658293}
+.azkar-buttons{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.azkar-favorite{border:1px solid #e0e7e9;border-radius:11px;padding:8px 10px;background:#fff;color:#658094;font:inherit;font-size:11px;font-weight:800}
+.azkar-favorite.on{color:#ad3a53;border-color:#f0d2d9;background:#fff0f3}
+.azkar-load{margin:15px 0;width:100%}
+.azkar-empty{text-align:center;padding:23px 12px;font-size:12px;color:#597a8d}

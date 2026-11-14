@@ -65,3 +65,9 @@ L'app affiche également les liens de crédit dans À propos. Les photos sont h�
 - Espace admin: horaires des rappels, horaires silence, délais avant voyage et rappel pendant le voyage. Exécuter `supabase/reminder-settings.sql` dans Supabase SQL Editor AVANT de sauvegarder la configuration.
 - Les rappels voyageurs nécessitent que l'utilisateur choisisse explicitement un programme parmi les voyages publiés, sans créer de réservation.
 - Tout rappel fonctionne en mode applicatif seulement (pas d'envoi Push garanti après fermeture).
+
+## Bibliothèque d'adhkâr élargie
+
+La bibliothèque locale (`adhkar-library.js`) contient 196 invocations dans 18 catégories. Interface avec recherche, favoris, suivi de lecture local (`localStorage`) et chargement progressif. Aucun compte Supabase ni base de données supplémentaire n'est nécessaire pour le contenu des invocations. Les textes sont des références à relire éditorialement avant de présenter comme collection religieuse vérifiée; pas de nombres de répétition automatiques sans source établie.
+
+Pour ajouter des invocations à l'avenir, étendre le tableau `entries` et éventuellement `categories` dans `adhkar-library.js`, augmenter le numéro de version des scripts et du cache PWA.
