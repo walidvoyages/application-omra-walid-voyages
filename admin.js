@@ -35,6 +35,7 @@ function paint(){
  if(view==='edit'){editPage();return}
  if(view==='settings'){settingsPage();return}
  if(view==='story-invites'){storyInvitesPage();return}
+  if(view==='monitor'){monitorPage();return}
  if(view==='custom-adhkar'){customAdhkarPage();return}
  dashboard()
 }
@@ -65,12 +66,13 @@ function dashboard(){
  const upcoming=items.filter(x=>x.end_date>=today).length;
  const filtered=items.filter(x=>[x.title,x.airline,x.hotel,x.tag].join(' ').toLowerCase().includes(query.toLowerCase()));
  root.innerHTML='<header class="head"><div>'+brand+'<h1>إدارة برامج العمرة</h1><p class="muted">'+esc(user?.email||'')+'</p></div><div class="buttons"><a href="./" target="_blank" rel="noopener">فتح التطبيق</a><button id="logout" class="btn light">خروج</button></div></header>'+
- '<div class="admin-special"><button id="reminder-settings" class="btn light">🔔 إدارة التذكيرات ومواقيتها</button><button id="story-invites-open" class="btn light">🕋 حسابات المعتمرين وكود الرحلة</button><button id="custom-adhkar-open" class="btn light">📿 إضافة أذكار للتطبيق</button><span class="muted">إعدادات تظهر للجميع بعد الحفظ في Supabase</span></div><div class="stats"><div class="stat"><strong>'+items.length+'</strong><span>البرامج الكل</span></div><div class="stat"><strong>'+published+'</strong><span>المنشورة</span></div><div class="stat"><strong>'+upcoming+'</strong><span>القادمة والحالية</span></div></div>'+
+ '<div class="admin-special"><button id="reminder-settings" class="btn light">🔔 إدارة التذكيرات ومواقيتها</button><button id="story-invites-open" class="btn light">🕋 حسابات المعتمرين وكود الرحلة</button><button id="monitor-open" class="btn primary">👥 متابعة جميع المعتمرين</button><button id="custom-adhkar-open" class="btn light">📿 إضافة أذكار للتطبيق</button><span class="muted">إعدادات تظهر للجميع بعد الحفظ في Supabase</span></div><div class="stats"><div class="stat"><strong>'+items.length+'</strong><span>البرامج الكل</span></div><div class="stat"><strong>'+published+'</strong><span>المنشورة</span></div><div class="stat"><strong>'+upcoming+'</strong><span>القادمة والحالية</span></div></div>'+
  '<section class="card"><h2>البرامج</h2><p class="muted">الـSauvegarde تسجّل كلّ تعديل في قاعدة Supabase. البرنامج غير المنشور ما يظهرش للزائر.</p>'+alerts()+'<div class="toolbar"><input type="search" id="search" value="'+esc(query)+'" placeholder="ابحث عن برنامج…"><button id="new" class="btn primary">+ إضافة عمرة</button></div>'+
  '<div class="tablewrap"><table><thead><tr><th>اسم العمرة</th><th>التواريخ</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="rows">'+(filtered.length?filtered.map(row).join(''):'<tr><td colspan="5">ما فماش برامج بعد.</td></tr>')+'</tbody></table></div></section><p class="bottom">© Walid Voyages · Espace Admin</p>';
  document.getElementById('logout').onclick=logout;
  document.getElementById('reminder-settings').onclick=loadSettings;
  document.getElementById('story-invites-open').onclick=loadStoryInvites;
+  document.getElementById('monitor-open').onclick=loadMonitor;
  document.getElementById('custom-adhkar-open').onclick=loadCustomAdhkar;
  document.getElementById('new').onclick=()=>{editing=null;view='edit';errorMsg('');paint()};
  document.getElementById('search').oninput=e=>{query=e.target.value;const list=items.filter(x=>[x.title,x.airline,x.hotel,x.tag].join(' ').toLowerCase().includes(query.toLowerCase()));document.getElementById('rows').innerHTML=list.length?list.map(row).join(''):'<tr><td colspan="5">ما فماش نتائج.</td></tr>';attachRows()};
@@ -295,7 +297,122 @@ async function deleteCustomAdhkar(id){
  await loadCustomAdhkar();info='تم حذف الذكر.';paint();
 }
 
-async function logout(){await sb.auth.signOut();user=null;items=[];view='login';errorMsg('');paint()}
+
+/* Agency-wide, admin-only overview. The security gate is enforced in Supabase
+   and the pilgrim's per-stop share_with_agency setting is OFF by default. */
+let monitorState={configured:false,unlocked:false},monitorInvites=[],monitorStops=[],monitorPhotos=[],monitorUrls={},monitorError='',monitorInfo='',monitorBusy=false,monitorSearch='';
+const monitorMap=s=>'https://www.google.com/maps?q='+encodeURIComponent(s.latitude+','+s.longitude);
+const monitorDate=d=>d?new Date(d).toLocaleString('fr-TN'):'';
+async function loadMonitor(){
+  view='monitor';monitorError='';monitorInfo='';monitorBusy=true;paint();
+  try{
+    const r=await sb.rpc('omra_monitor_status');
+    if(r.error)throw r.error;
+    monitorState=r.data||{configured:false,unlocked:false};
+    if(monitorState.unlocked)await fetchMonitorData();
+  }catch(e){monitorError='خاصية المتابعة تحتاج تفعيل SQL في Supabase: '+String(e.message||e).slice(0,180)}
+  finally{monitorBusy=false;paint()}
+}
+async function fetchMonitorData(){
+  const [i,s,p]=await Promise.all([
+    sb.from('omra_story_invites').select('id,customer_name,program_id,linked_user_id,revoked_at,omra_programs(title,start_date,end_date)').is('revoked_at',null).order('issued_at',{ascending:false}).limit(300),
+    sb.from('omra_story_stops').select('id,invite_id,title,visited_at,note,latitude,longitude,location_shared_at,updated_at,share_with_agency').eq('share_with_agency',true).order('updated_at',{ascending:false}).limit(600),
+    sb.from('omra_story_photos').select('id,invite_id,stop_id,storage_path,caption,created_at').order('created_at',{ascending:false}).limit(500)
+  ]);
+  if(i.error||s.error||p.error)throw (i.error||s.error||p.error);
+  monitorInvites=i.data||[];monitorStops=s.data||[];monitorPhotos=p.data||[];
+  monitorUrls={};
+  // Restrict expensive signed-URL requests; the full photo count is still visible.
+  const rows=monitorPhotos.slice(0,120);
+  const urls=await Promise.all(rows.map(async photo=>{
+    try{
+      const r=await sb.storage.from('wv-omra-private').createSignedUrl(photo.storage_path,600);
+      return [photo.id,r.data?.signedUrl||''];
+    }catch{return [photo.id,'']}
+  }));
+  monitorUrls=Object.fromEntries(urls.filter(([,url])=>url));
+}
+function monitorPage(){
+  const header='<header class="head"><div>'+brand+'<h1>👥 متابعة جميع المعتمرين</h1><p class="muted">إدارة Walid Voyages · محتوى يشاركه المعتمر بموافقته فقط</p></div><div class="buttons"><button id="monitor-back" class="btn light">رجوع للإدارة</button></div></header>';
+  const alert=(monitorError?'<p class="alert" role="alert">'+esc(monitorError)+'</p>':'')+(monitorInfo?'<p class="alert good">'+esc(monitorInfo)+'</p>':'');
+  let body='';
+  if(monitorBusy){
+    body='<section class="card"><p>جاري تحميل لوحة المتابعة…</p></section>';
+  }else if(!monitorState.configured){
+    body='<section class="card monitor-gate"><h2>🔐 إنشاء كود إشراف موحّد</h2><p>هذا الكود للإدارة فقط، ويخدم مع حساب Admin متاعك. اختار كود قوي من 16 حرف على الأقل، واحفظه في بلاصة آمنة. الكود ما يتخزّنش في GitHub.</p><form id="monitor-set-code"><div class="group"><label for="monitor-new-code">كود الإشراف الجديد</label><input id="monitor-new-code" name="code" type="password" required minlength="16" maxlength="120" autocomplete="new-password" dir="ltr"></div><div class="group"><label for="monitor-confirm-code">تأكيد الكود</label><input id="monitor-confirm-code" name="confirm" type="password" required minlength="16" maxlength="120" autocomplete="new-password" dir="ltr"></div><button class="btn primary" type="submit">حفظ الكود الموحّد</button></form></section>';
+  }else if(!monitorState.unlocked){
+    body='<section class="card monitor-gate"><h2>🔑 كود متابعة الإدارة</h2><p>بعد دخولك بحساب Admin، أدخل كود الإشراف الموحّد لفتح قائمة المعتمرين المصرّحين بالمشاركة. جلسة المتابعة مدتها ساعة وتتقفل تلقائيًا.</p><form id="monitor-unlock"><div class="group"><label for="monitor-code">الكود الموحّد</label><input id="monitor-code" type="password" name="code" required minlength="16" autocomplete="off" dir="ltr"></div><button class="btn primary full" type="submit">فتح المتابعة</button></form><p class="hint">إذا ضيّعت الكود، مسؤول Admin مخوّل ينجم يغيّرو، وبعدها تتلغى جلسات المتابعة القديمة.</p><button type="button" id="monitor-change-code" class="btn light">تغيير كود الإشراف</button><div id="monitor-change-area"></div></section>';
+  }else{
+    const active=monitorInvites.filter(i=>i.linked_user_id);
+    const sharedIds=new Set(monitorStops.map(s=>s.invite_id));
+    const filter=monitorSearch.trim().toLocaleLowerCase();
+    const visible=monitorInvites.filter(i=>!filter||[i.customer_name,i.omra_programs?.title||''].join(' ').toLocaleLowerCase().includes(filter));
+    body='<div class="stats"><div class="stat"><strong>'+active.length+'</strong><span>معتمرين عندهم حسابات</span></div><div class="stat"><strong>'+sharedIds.size+'</strong><span>معتمرين شاركوا محتوى</span></div><div class="stat"><strong>'+monitorStops.length+'</strong><span>محطات مشتركة</span></div></div>'+
+    '<section class="card"><div class="toolbar"><h2>ذكريات المعتمرين</h2><div class="buttons"><button id="monitor-refresh" class="btn light">🔄 تحديث</button><button id="monitor-lock" class="btn danger">🔒 قفل المتابعة</button></div></div><p class="hint">تظهر فقط المحطات والصور والمواقع اللي سمح المعتمر للوكالة تشوفها. المواقع موش مباشرة؛ هي نقاط سجّلها المعتمر بنفسه.</p>'+
+    '<div class="toolbar"><input type="search" id="monitor-search" value="'+esc(monitorSearch)+'" placeholder="ابحث باسم المعتمر أو البرنامج…"></div>'+
+    (visible.length?visible.map(inv=>{
+      const recs=monitorStops.filter(s=>s.invite_id===inv.id);
+      const program=inv.omra_programs?.title||'برنامج العمرة';
+      return '<article class="monitor-pilgrim"><div class="monitor-pilgrim-head"><div><strong>👤 '+esc(inv.customer_name)+'</strong><p class="muted">'+esc(program)+'</p></div><span class="status '+(recs.length?'on':'')+'">'+(recs.length?'شارك '+recs.length+' محطة':inv.linked_user_id?'لا توجد مشاركة':'لم يُفعّل الحساب')+'</span></div>'+
+      (recs.length?recs.map(s=>{
+        const pics=monitorPhotos.filter(p=>p.stop_id===s.id);
+        return '<div class="monitor-stop"><strong>📍 '+esc(s.title)+'</strong>'+(s.visited_at?'<small>زيارة: '+esc(monitorDate(s.visited_at))+'</small>':'')+
+        (s.note?'<p>'+esc(s.note)+'</p>':'')+
+        (s.latitude!=null&&s.longitude!=null?'<a target="_blank" rel="noopener noreferrer" href="'+esc(monitorMap(s))+'">🗺️ الموقع اللي سجّلو المعتمر ('+esc(monitorDate(s.location_shared_at))+')</a>':'')+
+        (pics.length?'<div class="monitor-gallery">'+pics.map(p=>monitorUrls[p.id]?'<a target="_blank" rel="noopener noreferrer" href="'+esc(monitorUrls[p.id])+'" aria-label="افتح صورة مشتركة"><img loading="lazy" alt="صورة مشتركة من المعتمر" src="'+esc(monitorUrls[p.id])+'"></a>':'<span class="monitor-photo-placeholder">📷</span>').join('')+'</div>':'')+
+        '</div>';
+      }).join(''):'<p class="muted">ما فماش ذكريات متاحة للوكالة من هذا المعتمر.</p>')+'</article>';
+    }).join(''):'<p class="muted">ما فماش معتمرين مطابقين للبحث.</p>')+'</section>';
+  }
+  root.innerHTML=header+alert+body+'<p class="bottom">© Walid Voyages · متابعة بموافقة المعتمر</p>';
+  document.getElementById('monitor-back').onclick=()=>{view='dashboard';paint()};
+  document.getElementById('monitor-set-code')?.addEventListener('submit',monitorSetCode);
+  document.getElementById('monitor-unlock')?.addEventListener('submit',monitorUnlock);
+  document.getElementById('monitor-refresh')?.addEventListener('click',()=>loadMonitor());
+  document.getElementById('monitor-lock')?.addEventListener('click',monitorLock);
+  document.getElementById('monitor-search')?.addEventListener('input',e=>{
+    const cursor=e.target.selectionStart;monitorSearch=e.target.value;monitorPage();
+    const next=document.getElementById('monitor-search');next?.focus();next?.setSelectionRange(cursor,cursor);
+  });
+  document.getElementById('monitor-change-code')?.addEventListener('click',()=>{
+    const target=document.getElementById('monitor-change-area');
+    target.innerHTML='<form id="monitor-set-code"><div class="group"><label>كود جديد (16 حرف على الأقل)</label><input type="password" name="code" required minlength="16" maxlength="120" autocomplete="new-password"></div><div class="group"><label>تأكيد الكود الجديد</label><input type="password" name="confirm" required minlength="16" maxlength="120" autocomplete="new-password"></div><button type="submit" class="btn primary">تغيير الكود وإلغاء الجلسات القديمة</button></form>';
+    target.querySelector('form').addEventListener('submit',monitorSetCode);
+  });
+}
+async function monitorSetCode(e){
+  e.preventDefault();
+  if(monitorBusy)return;
+  const f=new FormData(e.currentTarget),code=String(f.get('code')||''),confirmCode=String(f.get('confirm')||'');
+  if(code.length<16||code!==confirmCode){monitorError='الكود يلزم يكون 16 حرف على الأقل ومتطابق في الخانتين.';paint();return}
+  monitorBusy=true;monitorError='';paint();
+  try{
+    const r=await sb.rpc('omra_monitor_set_code',{p_code:code});if(r.error)throw r.error;
+    monitorInfo='تسجّل الكود بنجاح. استعمله توّا لفتح المتابعة.';monitorState={configured:true,unlocked:false};
+  }catch(e){monitorError='تعذّر حفظ الكود: '+String(e.message||e).slice(0,150)}
+  finally{monitorBusy=false;paint()}
+}
+async function monitorUnlock(e){
+  e.preventDefault();if(monitorBusy)return;
+  const code=String(new FormData(e.currentTarget).get('code')||'');
+  monitorBusy=true;monitorError='';paint();
+  try{
+    const r=await sb.rpc('omra_monitor_unlock',{p_code:code});if(r.error)throw r.error;
+    if(!r.data){monitorError='الكود موش صحيح أو برشا محاولات فاشلة. إذا تعاود تغلط استنى 15 دقيقة.'}
+    else{monitorState.unlocked=true;await fetchMonitorData();monitorInfo='اللوحة محلولة لمدة ساعة.'}
+  }catch(e){monitorState.unlocked=false;monitorError='تعذّر فتح المتابعة: '+String(e.message||e).slice(0,160)}
+  finally{monitorBusy=false;paint()}
+}
+async function monitorLock(){
+  if(monitorBusy)return;monitorBusy=true;paint();
+  try{
+    const r=await sb.rpc('omra_monitor_lock');if(r.error)throw r.error;
+    monitorState.unlocked=false;monitorStops=[];monitorPhotos=[];monitorUrls={};monitorInfo='تسكّرت المتابعة.';
+  }catch(e){monitorError=String(e.message||e)}
+  finally{monitorBusy=false;paint()}
+}
+
+async function logout(){await sb.auth.signOut();user=null;items=[];view='login';monitorState={configured:false,unlocked:false};monitorInvites=[];monitorStops=[];monitorPhotos=[];monitorUrls={};errorMsg('');paint()}
 async function initialize(){
  paint();if(!okConfig())return;sb=window.supabase.createClient(cfg.url,cfg.anonKey);
  sb.auth.onAuthStateChange(event=>{if(event==='PASSWORD_RECOVERY'){recovery=true;view='recover';paint()}});

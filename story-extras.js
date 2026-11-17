@@ -36,7 +36,7 @@ async function reload(){
   owner=own.data?.[0]||null;
   if(owner){
    const [s,v]=await Promise.all([
-    sb.from('omra_story_stops').select('id,stop_key,title,sequence,visited_at,note,share_with_family,latitude,longitude,location_accuracy_m,location_shared_at').eq('invite_id',owner.id).order('sequence'),
+    sb.from('omra_story_stops').select('id,stop_key,title,sequence,visited_at,note,share_with_family,share_with_agency,latitude,longitude,location_accuracy_m,location_shared_at').eq('invite_id',owner.id).order('sequence'),
     sb.from('omra_family_viewers').select('viewer_user_id,revoked_at').eq('invite_id',owner.id)
    ]);
    if(s.error)throw s.error;if(v.error)throw v.error;
@@ -76,7 +76,7 @@ function render(){
  const chosen=stops.find(x=>x.id===selected);
  return '<section class="story-extra-panel card"><h2>📸 صور ومواقع ذكريات عمرتي</h2><p class="story-extra-hint">أوّل حاجة، إضغط على محطة من المخطّط وسجّل الزيارة أو ذكرى، وبعد اختارها هنا لإضافة صور أو مشاركة المكان. الموقع يتسجّل كان بموافقتك.</p>'+alert()+
  (stops.length?'<label>المحطة اللي تحب تضيفلها ذكريات</label><select id="extra-stop-select">'+stops.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?'selected':'')+'>'+esc(s.title)+'</option>').join('')+'</select>'+
- (chosen?'<div class="story-extra-selected"><strong>📍 '+esc(chosen.title)+'</strong><label class="story-extra-toggle" for="extra-share"><input type="checkbox" id="extra-share" '+(chosen.share_with_family?'checked':'')+'><span>نسمح لعائلتي تشوف هالمحطة والصور والموقع المسجّل فيها</span></label><label class="story-extra-upload">📸 اختار صور من تليفونك<input type="file" id="extra-upload" accept="image/jpeg,image/png,image/webp" multiple></label><button type="button" class="btn light" data-extra-action="location">📍 سجّل موقعي الحالي في هالمحطة</button>'+(chosen.latitude!=null?'<a href="'+esc(locationUrl(chosen))+'" target="_blank" rel="noopener noreferrer">🗺️ شوف المكان على Google Maps</a><button type="button" class="btn light" data-extra-action="share-location">📤 مشاركة موقع هالمحطة عبر الهاتف / WhatsApp</button><small>الموقع اللي سجلتو · دقّة تقريبية '+Math.round(chosen.location_accuracy_m||0)+' متر</small><button class="btn light" type="button" data-extra-action="clear-location">حذف الموقع المسجّل</button>':'')+album(chosen.id)+'</div>':''):'<p>سجّل أوّل زيارة في مخطّط العمرة، باش تظهر المحطات هنا.</p>')+
+ (chosen?'<div class="story-extra-selected"><strong>📍 '+esc(chosen.title)+'</strong><label class="story-extra-toggle" for="extra-share"><input type="checkbox" id="extra-share" '+(chosen.share_with_family?'checked':'')+'><span>نسمح لعائلتي تشوف هالمحطة والصور والموقع المسجّل فيها</span></label><label class="story-extra-toggle" for="extra-share-agency"><input type="checkbox" id="extra-share-agency" '+(chosen.share_with_agency?'checked':'')+'><span>نسمح لوكالة Walid Voyages تشوف هالمحطة وصورها والموقع المسجّل فيها (اختياري)</span></label><label class="story-extra-upload">📸 اختار صور من تليفونك<input type="file" id="extra-upload" accept="image/jpeg,image/png,image/webp" multiple></label><button type="button" class="btn light" data-extra-action="location">📍 سجّل موقعي الحالي في هالمحطة</button>'+(chosen.latitude!=null?'<a href="'+esc(locationUrl(chosen))+'" target="_blank" rel="noopener noreferrer">🗺️ شوف المكان على Google Maps</a><button type="button" class="btn light" data-extra-action="share-location">📤 مشاركة موقع هالمحطة عبر الهاتف / WhatsApp</button><small>الموقع اللي سجلتو · دقّة تقريبية '+Math.round(chosen.location_accuracy_m||0)+' متر</small><button class="btn light" type="button" data-extra-action="clear-location">حذف الموقع المسجّل</button>':'')+album(chosen.id)+'</div>':''):'<p>سجّل أوّل زيارة في مخطّط العمرة، باش تظهر المحطات هنا.</p>')+
  '</section><section class="story-extra-panel card"><h2>👨‍👩‍👧 مشاركة خاصة مع عائلتي</h2><p>ابعث نفس كود FM للناس اللي تحبهم يتابعوك مباشرة، بلا Compte ولا تأكيد Email. يظهرلهم كان المحتوى اللي تسمح بمشاركتو، وتنجم توقف المتابعة وقت تحب.</p><button type="button" class="btn lime" data-extra-action="issue">إنشاء كود متابعة للعائلة</button><button type="button" class="btn light" data-extra-action="disable-family">إيقاف المتابعة وإلغاء كل الأكواد</button>'+(issued?'<strong class="story-extra-code" dir="ltr">'+esc(issued)+'</strong><button type="button" class="btn light" data-extra-action="copy">نسخ الكود</button><small>نفس الكود ينجم يستعملوه أكثر من فرد من العائلة خلال 14 يوم، وتنجم توقف المتابعة في أي وقت.</small>':'')+
  viewers.filter(v=>!v.revoked_at).map(v=>'<div class="story-extra-viewer"><span>حساب عائلي ···'+esc(v.viewer_user_id.slice(-6))+'</span><button class="btn light" type="button" data-extra-revoke="'+esc(v.viewer_user_id)+'">إلغاء المتابعة</button></div>').join('')+'</section>';
 }
@@ -146,6 +146,15 @@ async function call(action){
  finally{busy=false}
 }
 const chosenStop=()=>stops.find(s=>s.id===selected);
+async function changeAgencyShare(value){
+  const s=chosenStop();if(!s||busy)return;
+  busy=true;
+  try{
+    const r=await sb.from('omra_story_stops').update({share_with_agency:value}).eq('id',s.id).eq('owner_id',user.id);
+    if(r.error)throw r.error;await reload();notify(value?'تسمحت مشاركة المحطة مع وكالة Walid Voyages ✅':'توقفت مشاركة المحطة مع الوكالة ✅');
+  }catch(e){notify('تفعيل مشاركة الوكالة يحتاج ملف SQL: '+String(e.message||e).slice(0,130),true)}
+  finally{busy=false}
+}
 async function changeShare(value){
  const s=chosenStop();if(!s||busy)return;
  busy=true;
@@ -245,6 +254,7 @@ document.addEventListener('change',e=>{
  if(e.target.matches('[data-story-photo-upload]')){uploadForKey(e.target.dataset.storyPhotoUpload,e.target.files);return}
  if(e.target.id==='extra-stop-select'){selected=e.target.value;update()}
  if(e.target.id==='extra-share')changeShare(e.target.checked);
+  if(e.target.id==='extra-share-agency')changeAgencyShare(e.target.checked);
  if(e.target.id==='extra-upload')upload(e.target.files);
 });
 document.addEventListener('click',e=>{
