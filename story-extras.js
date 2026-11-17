@@ -5,7 +5,7 @@ const cfg=window.WALID_SUPABASE_CONFIG||{};
 if(!window.supabase||!cfg.url||!cfg.anonKey)return;
 const sb=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{storageKey:'wv-client-auth',detectSessionInUrl:false}});
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let user=null,owner=null,viewer=null,stops=[],shared=[],viewers=[],photos=[],urls={},ready=false,loading=false,busy=false,warning='',notice='',issued='',selected='',rev=0,avatarUrl='',avatarMsg='';
+let user=null,owner=null,viewer=null,stops=[],shared=[],viewers=[],photos=[],urls={},ready=false,loading=false,busy=false,warning='',notice='',issued='',selected='',rev=0,avatarUrl='',avatarMsg='',profileInfo=null,profileBusy=false;
 const isMissing=e=>/PGRST205|PGRST202|schema cache|Could not find the (table|function)/i.test(e?.message||'');
 const locationUrl=s=>'https://www.google.com/maps?q='+encodeURIComponent(s.latitude+','+s.longitude);
 const stamp=d=>d?new Date(d).toLocaleString('fr-TN'):'';
@@ -27,10 +27,14 @@ async function readPhotos(inviteId){
 }
 async function reload(){
  if(loading)return;
- loading=true;ready=false;warning='';owner=null;viewer=null;stops=[];shared=[];viewers=[];photos=[];urls={};avatarUrl='';
+ loading=true;ready=false;warning='';owner=null;viewer=null;stops=[];shared=[];viewers=[];photos=[];urls={};avatarUrl='';profileInfo=null;
  try{
   const a=await sb.auth.getUser();user=a.data?.user||null;
   if(!user){ready=true;return}
+  // A personal profile exists independently of any booked Omra.
+  const prof=await sb.from('omra_client_profiles').select('user_id,full_name,avatar_path').eq('user_id',user.id).maybeSingle();
+  if(prof.error)throw prof.error;
+  profileInfo=prof.data||{user_id:user.id,full_name:'',avatar_path:null};
   let own=await sb.from('omra_story_invites').select('id,customer_name,program_id,avatar_path').eq('linked_user_id',user.id).is('revoked_at',null).limit(1);
   if(own.error&&/avatar_path|42703|PGRST204/i.test(own.error.message||'')){
    own=await sb.from('omra_story_invites').select('id,customer_name,program_id').eq('linked_user_id',user.id).is('revoked_at',null).limit(1);
@@ -45,7 +49,6 @@ async function reload(){
    ]);
    if(s.error)throw s.error;if(v.error)throw v.error;
    stops=s.data||[];viewers=v.data||[];
-   if(owner.avatar_path){const a=await sb.storage.from('wv-omra-private').createSignedUrl(owner.avatar_path,900);avatarUrl=a.data?.signedUrl||'';}
    try{await readPhotos(owner.id)}catch(e){console.warn('Gallery unavailable',e?.message||e)}
    if(!selected||!stops.some(s=>s.id===selected))selected=stops[0]?.id||'';
   }else{
@@ -61,6 +64,13 @@ async function reload(){
     viewer=i.data;shared=s.data||[];
     if(viewer)await readPhotos(id);
    }
+  }
+  const profileAvatar=profileInfo?.avatar_path||owner?.avatar_path;
+  if(profileAvatar){
+   const signed=await sb.storage.from('wv-omra-private').createSignedUrl(profileAvatar,900);
+   if(signed.error){
+    avatarMsg='⚠️ تصويرة البروفايل محفوظة، أما ما نجّمتش نعرضها: '+String(signed.error.message||'').slice(0,90);
+   }else{avatarUrl=signed.data?.signedUrl||'';}
   }
   ready=true;
  }catch(e){warning=isMissing(e)?'خاصية مشاركة الذكريات تحتاج تفعيل ملف SQL الجديد في Supabase.':'تعذّر تحميل الذكريات: '+String(e.message||e).slice(0,120)}
@@ -86,7 +96,7 @@ function render(){
  viewers.filter(v=>!v.revoked_at).map(v=>'<div class="story-extra-viewer"><span>حساب عائلي ···'+esc(v.viewer_user_id.slice(-6))+'</span><button class="btn light" type="button" data-extra-revoke="'+esc(v.viewer_user_id)+'">إلغاء المتابعة</button></div>').join('')+'</section>';
 }
 function profileAvatarHtml(){
- if(!owner)return '<span>👤</span>';
+ if(!user)return '<span>👤</span>';
  return '<div class="story-owner-avatar"><div class="story-owner-avatar-image">'+(avatarUrl?'<img src="'+esc(avatarUrl)+'" alt="صورة المعتمر" loading="lazy">':'<span>👤</span>')+'</div><label class="story-owner-avatar-edit" title="صورة اختيارية">📷<input type="file" id="story-avatar-input" accept="image/jpeg,image/png,image/webp" aria-label="إضافة أو تغيير صورة البروفايل"></label></div>';
 }
 async function compressAvatar(file){
@@ -115,26 +125,30 @@ async function compressAvatar(file){
  }finally{URL.revokeObjectURL(objectURL)}
 }
 async function uploadAvatar(files){
- if(busy||!owner||!user||!files?.length)return;
- const file=files[0],userId=user.id,inviteId=owner.id,previous=owner.avatar_path;
+ if(busy||!user||!files?.length)return;
+ const file=files[0],userId=user.id,previous=profileInfo?.avatar_path||owner?.avatar_path;
  busy=true;avatarMsg='⏳ جاري تجهيز الصورة وحفظها…';update();
  let path='',uploaded=false,saved=false;
  try{
   const photo=await compressAvatar(file);
-  path=userId+'/'+inviteId+'/avatar/'+crypto.randomUUID()+'.jpg';
+  path=userId+'/profile/'+crypto.randomUUID()+'.jpg';
   const up=await sb.storage.from('wv-omra-private').upload(path,photo,{contentType:'image/jpeg',upsert:false});
   if(up.error)throw up.error;
   uploaded=true;
-  const r=await sb.rpc('omra_set_story_avatar',{p_invite_id:inviteId,p_path:path});
+  const r=await sb.from('omra_client_profiles').upsert({user_id:userId,avatar_path:path},{onConflict:'user_id'});
   if(r.error)throw r.error;
   saved=true;
-  const check=await sb.from('omra_story_invites').select('avatar_path').eq('id',inviteId).maybeSingle();
+  const check=await sb.from('omra_client_profiles').select('avatar_path').eq('user_id',userId).maybeSingle();
   if(check.error)throw check.error;
   if(check.data?.avatar_path!==path)throw Error('ما تأكّدش تسجيل الصورة في قاعدة البيانات.');
+  const signed=await sb.storage.from('wv-omra-private').createSignedUrl(path,900);
+  if(signed.error||!signed.data?.signedUrl)throw Error('الصورة محفوظة، لكن تعذّر عرضها: '+String(signed.error?.message||''));
+  avatarUrl=signed.data.signedUrl;
+  profileInfo={...(profileInfo||{user_id:userId}),avatar_path:path};
   // Updating the original pointer is the source of truth. Clean up is best effort.
-  if(previous&&previous!==path){try{await sb.storage.from('wv-omra-private').remove([previous])}catch(_){}}
+  if(previous&&previous!==path&&previous===profileInfo?.avatar_path&&previous.startsWith(userId+'/profile/')){try{await sb.storage.from('wv-omra-private').remove([previous])}catch(_){}}
   await reload();
-  avatarMsg='✅ صورة البروفايل تحفّظت بنجاح';
+  avatarMsg=avatarUrl?'✅ صورة البروفايل تحفّظت وتظهر بنجاح':'⚠️ الصورة محفوظة، لكن يلزم نتحقق من عرضها';
   notify(avatarMsg);
  }catch(e){
   if(uploaded&&!saved&&path){try{await sb.storage.from('wv-omra-private').remove([path])}catch(_){}}
@@ -309,6 +323,21 @@ document.addEventListener('click',e=>{
  if(rv)revoke(rv.dataset.extraRevoke);
 });
 sb.auth.onAuthStateChange(()=>{Promise.resolve().then(reload)});
-window.WVStoryExtras={render,reload,renderPhotosForKey,profileAvatarHtml,avatarMessage:()=>avatarMsg};
+async function updateProfileName(e){
+ e.preventDefault();if(!user||profileBusy)return;
+ const f=new FormData(e.target),name=String(f.get('full_name')||'').trim();
+ if(name.length<2||name.length>120){avatarMsg='⚠️ اكتب اسم بين 2 و120 حرف.';update();return;}
+ profileBusy=true;
+ try{
+  const r=await sb.from('omra_client_profiles').upsert({user_id:user.id,full_name:name},{onConflict:'user_id'});
+  if(r.error)throw r.error;
+  profileInfo={...(profileInfo||{}),user_id:user.id,full_name:name};
+  avatarMsg='✅ الاسم الشخصي تحفّظ';
+ }catch(err){avatarMsg='⚠️ ما نجّمتش نسجّل الاسم: '+String(err.message||err).slice(0,100)}
+ finally{profileBusy=false;update()}
+}
+function profileName(){return profileInfo?.full_name||''}
+document.addEventListener('submit',e=>{if(e.target.id==='wv-profile-form')updateProfileName(e)});
+window.WVStoryExtras={render,reload,renderPhotosForKey,profileAvatarHtml,avatarMessage:()=>avatarMsg,profileName};
 reload();
 })();

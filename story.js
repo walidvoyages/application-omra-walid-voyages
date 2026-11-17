@@ -99,7 +99,7 @@ function loginPage(){
  if(!db)return '<div class="card story-auth-card" role="alert">إعدادات Supabase غير متاحة. تواصل مع إدارة Walid Voyages.</div>';
  const signup=authMode==='signup',recover=authMode==='recover',newPassword=authMode==='set-password';
  const title=newPassword?'كلمة سر جديدة':recover?'استرجاع كلمة السر':signup?'أنشئ حسابك الخاص':'مرحبًا بيك في عمرتي حكاية';
- const desc=newPassword?'اختار كلمة سر جديدة باش ترجع تدخل لحسابك.':recover?'اكتب إيميلك ونبعثولك رابط استرجاع كلمة السر.':signup?'افتح حسابك الشخصي باش تحفظ مراحلك وذكرياتك.':'ادخل بحسابك الشخصي باش ترجع لرحلتك وذكرياتك في أي وقت.';
+ const desc=newPassword?'اختار كلمة سر جديدة باش ترجع تدخل لحسابك.':recover?'اكتب إيميلك ونبعثولك رابط استرجاع كلمة السر.':signup?'اعمل حساب مجاني واستعمل التطبيق بلا كود. ربط رحلة العمرة اختياري.':'ادخل بحسابك الشخصي باش ترجع لرحلتك وذكرياتك في أي وقت.';
  const header='<section class="card story-auth-card" aria-label="حساب المعتمر"><div class="story-auth-visual"><div class="story-auth-emblem">🕋</div><span class="story-auth-eyebrow">WALID VOYAGES · OMRA STORY</span><h2>'+title+'</h2><p>'+desc+'</p></div>'+badge();
  if(newPassword){
   return header+
@@ -121,19 +121,27 @@ function loginPage(){
  '<div class="story-auth-support">'+
  (!recover?'<button type="button" data-story-auth-mode="recover">نسيت كلمة السر؟</button>':'<button type="button" data-story-auth-mode="login">رجوع للدخول</button>')+
  (pendingConfirmation?'<button type="button" data-story-auth="resend">إعادة إرسال تأكيد البريد</button>':'')+
- '</div><p class="story-auth-privacy">🔒 حسابك خاص بيك. عمرتك ما تظهر كان بعد ربط الكود اللي تعطيهولك الوكالة.</p></section>';
+ '</div><p class="story-auth-privacy">🔒 التسجيل مفتوح للجميع من غير كود. ربط حجز العمرة الخاص يتطلب كود الوكالة فقط.</p></section>';
 }
+
 function linkPage(){
- return '<section class="card story-panel"><div class="story-symbol">🎟️</div><h2>اربط رحلتك بملفّك</h2><p>مرحبًا '+safe(user.email||'')+'. بعد ما تثبّت حجزك، الوكالة تعطيك كود عمرة خاص عبر WhatsApp أو Email. أدخلو مرّة واحدة وتتربط رحلتك بحسابك.</p>'+badge()+
- '<form id="story-code-form" class="story-form"><label for="story-invite">الكود الخاص اللي عطاتهولك الوكالة</label><input id="story-invite" name="invite" dir="ltr" inputmode="text" autocapitalize="characters" autocomplete="off" spellcheck="false" minlength="22" maxlength="80" required placeholder="WV-XXXX-XXXX-XXXX-XXXX-XXXX"><p class="story-code-help">الكود تلقاه عند وكالة Walid Voyages، موش في إيميل تأكيد الحساب. تنجم تنسخو وتلصقو هنا.</p><button type="submit" class="btn lime full">ربط عمرتي</button></form>'+
- '<button type="button" class="story-link" data-story="logout">الخروج من حسابي</button></section>';
+ return '<section class="card story-profile"><div class="story-profile-head">'+
+  (window.WVStoryExtras?.profileAvatarHtml?.()||'<span>👤</span>')+
+  '<div><p class="story-hint">ملفّي الشخصي</p><h2>'+safe(window.WVStoryExtras?.profileName?.()||'مرحبا بيك')+'</h2><small>'+safe(user?.email||'')+'</small></div></div>'+
+  (window.WVStoryExtras?.avatarMessage?.()?'<p class="story-feedback">'+safe(window.WVStoryExtras.avatarMessage())+'</p>':'')+
+  '<form id="wv-profile-form" class="story-form" autocomplete="on"><label for="wv-profile-name">اسمي في التطبيق</label><input id="wv-profile-name" name="full_name" maxlength="120" minlength="2" required value="'+safe(window.WVStoryExtras?.profileName?.()||'')+'" placeholder="الاسم واللقب"><button type="submit" class="btn light">حفظ الاسم</button></form>'+
+  '<p class="story-intro">✅ حسابك مفتوح بلا كود عمرة. تنجم تستعمل الأدعية، الأذكار، المناسك، المواقيت، والمزارات. تصويرتك واسمك يتحفظوا في حسابك الخاص.</p></section>'+
+  '<section class="card story-panel"><div class="story-symbol">🎟️</div><h2>عندك حجز عمرة مع Walid Voyages؟</h2><p>اختياري: كان الوكالة عطتك كود الرحلة، ادخلو باش تربط برنامجك ومخطط الرحلة وذكريات المعتمر بحسابك. ما تستحقش الكود باش تعمل حساب أو تستعمل باقي التطبيق.</p>'+badge()+
+  '<form id="story-code-form" class="story-form"><label for="story-invite">كود ربط الرحلة (اختياري)</label><input id="story-invite" name="invite" dir="ltr" inputmode="text" autocapitalize="characters" autocomplete="off" spellcheck="false" minlength="22" maxlength="80" required placeholder="WV-XXXX-XXXX-XXXX-XXXX-XXXX"><button type="submit" class="btn lime full">ربط رحلتي</button></form>'+
+  '<button type="button" class="story-link" data-story="logout">الخروج من حسابي</button></section>';
 }
 function journeyPage(){
- const name=invite.customer_name||user.email;
+ const name=window.WVStoryExtras?.profileName?.()||invite.customer_name||user.email;
  const done=steps().filter(s=>s.stored?.visited_at).length,total=steps().length;
  let selected=steps().find(s=>s.key===editKey);
  return '<section class="card story-profile"><div class="story-profile-head">'+(window.WVStoryExtras?.profileAvatarHtml?.()||'<span>👤</span>')+'<div><p class="story-hint">ملفّي الشخصي</p><h2>'+safe(name)+'</h2><small>'+safe(user.email||'')+'</small></div></div>'+
  (window.WVStoryExtras?.avatarMessage?.()?'<p class="story-feedback">'+safe(window.WVStoryExtras.avatarMessage())+'</p>':'')+
+  '<form id="wv-profile-form" class="story-form" autocomplete="on"><label for="wv-profile-name">اسمي في التطبيق</label><input id="wv-profile-name" name="full_name" maxlength="120" minlength="2" required value="'+safe(window.WVStoryExtras?.profileName?.()||'')+'" placeholder="الاسم واللقب"><button type="submit" class="btn light">حفظ الاسم</button></form>'+
   '<div class="story-trip"><span>🕋 عمرتي الخاصة</span><strong>'+safe(trip?.title||'برنامج العمرة')+'</strong><small>من '+dateText(trip?.start_date)+' إلى '+dateText(trip?.end_date)+'</small>'+
  '<small>'+safe(trip?.airline||'')+(trip?.hotel?' · '+safe(trip.hotel):'')+'</small></div>'+
  '<div class="story-progress"><strong>تقدّم الرحلة: '+done+' من '+total+' محطة</strong><div class="bar"><span style="width:'+Math.round(done*100/total)+'%"></span></div></div></section>'+
@@ -167,7 +175,7 @@ async function handleLogin(event){
     notify('تمّ إرسال طلب التسجيل. إذا تأكيد البريد مفعل في Supabase، افتح إيميلك واضغط على رابط التأكيد وبعد اعمل Login.');
    }else{
     user=r.data.user;pendingConfirmation=false;await reload();
-    notify('تمّ إنشاء الحساب. توا اطلب كود عمرتك الخاص من الوكالة.');
+    notify('✅ حسابك تحلّ بنجاح، تنجم تستعمل التطبيق بلا كود. ربط عمرة Walid Voyages اختياري.');
    }
   }else{
    const r=await db.auth.signInWithPassword({email,password});
@@ -185,7 +193,7 @@ async function handleLogin(event){
    }
    user=r.data.user;pendingConfirmation=false;
    await reload();
-   notify('تمّ الدخول بنجاح. إذا ما عندكش رحلة مربوطة، اطلب كود المعتمر من الوكالة.');
+   notify('✅ تمّ الدخول بنجاح، التطبيق مفتوح ليك. كود الرحلة اختياري.');
   }
  }catch(e){notify('تعذّر إكمال العملية: '+String(e.message||e).slice(0,220),true)}
  finally{busy=false;const b=document.getElementById('story-auth-submit');if(b){b.disabled=false;if(b.textContent==='جاري التثبّت…')b.textContent=authMode==='signup'?'إنشاء حسابي':authMode==='recover'?'إرسال رابط الاسترجاع':'دخول إلى عمرتي'}}
