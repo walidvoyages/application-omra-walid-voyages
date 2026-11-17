@@ -451,10 +451,18 @@ async function reviewSignup(id,decision){
  if(signupBusy||!id||!['approved','rejected'].includes(decision))return;
  if(decision==='rejected'&&!confirm('متأكد تحب ترفض الحساب؟'))return;
  signupBusy=true;signupError='';signupMessage='';signupSecret='';paint();
- const r=await sb.rpc('omra_admin_review_signup',{p_user_id:id,p_decision:decision});
- if(r.error){signupError='فشل القرار: '+String(r.error.message).slice(0,160)}
- else if(decision==='approved'){signupSecret=String(r.data||'');signupMessage='الحساب مقبول. انسخ الكود وابعثو عبر WhatsApp.'}
- else signupMessage='تمّ رفض الحساب.';
+ try{
+  // Server-side Edge Function verifies the Admin session and confirms the email
+  // in Supabase Auth before exposing the single-use activation code.
+  const {data,error}=await sb.functions.invoke('omra-review-account',{body:{userId:id,decision}});
+  if(error)throw Error(data?.error||error.message||'تعذّر الاتصال بخدمة مراجعة الحساب');
+  if(data?.error)throw Error(data.error);
+  if(decision==='approved'){
+   if(!data?.approved||!data?.code)throw Error('ما نجّمتش نولّد كود التفعيل. عاود جرّب.');
+   signupSecret=String(data.code);
+   signupMessage='تم قبول الحساب وتأكيده في Supabase. انسخ كود التفعيل وابعثه عبر WhatsApp.';
+  }else signupMessage='تم رفض الحساب.';
+ }catch(err){signupError='تعذّر معالجة الطلب: '+String(err?.message||err).slice(0,185)}
  const rows=await sb.from('omra_account_requests')
   .select('user_id,email,full_name,phone,status,requested_at,reviewed_at,activated_at')
   .order('requested_at',{ascending:false}).limit(350);
