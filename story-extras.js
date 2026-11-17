@@ -5,7 +5,7 @@ const cfg=window.WALID_SUPABASE_CONFIG||{};
 if(!window.supabase||!cfg.url||!cfg.anonKey)return;
 const sb=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{storageKey:'wv-client-auth',detectSessionInUrl:false}});
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let user=null,owner=null,viewer=null,stops=[],shared=[],viewers=[],photos=[],urls={},ready=false,loading=false,busy=false,warning='',notice='',issued='',selected='',rev=0,avatarUrl='';
+let user=null,owner=null,viewer=null,stops=[],shared=[],viewers=[],photos=[],urls={},ready=false,loading=false,busy=false,warning='',notice='',issued='',selected='',rev=0,avatarUrl='',avatarMsg='';
 const isMissing=e=>/PGRST205|PGRST202|schema cache|Could not find the (table|function)/i.test(e?.message||'');
 const locationUrl=s=>'https://www.google.com/maps?q='+encodeURIComponent(s.latitude+','+s.longitude);
 const stamp=d=>d?new Date(d).toLocaleString('fr-TN'):'';
@@ -31,7 +31,11 @@ async function reload(){
  try{
   const a=await sb.auth.getUser();user=a.data?.user||null;
   if(!user){ready=true;return}
-  const own=await sb.from('omra_story_invites').select('id,customer_name,program_id,avatar_path').eq('linked_user_id',user.id).is('revoked_at',null).limit(1);
+  let own=await sb.from('omra_story_invites').select('id,customer_name,program_id,avatar_path').eq('linked_user_id',user.id).is('revoked_at',null).limit(1);
+  if(own.error&&/avatar_path|42703|PGRST204/i.test(own.error.message||'')){
+   own=await sb.from('omra_story_invites').select('id,customer_name,program_id').eq('linked_user_id',user.id).is('revoked_at',null).limit(1);
+   avatarMsg='⚠️ يلزم تفعيل ملف Supabase fix-profile-avatar.sql';
+  }
   if(own.error)throw own.error;
   owner=own.data?.[0]||null;
   if(owner){
@@ -40,8 +44,9 @@ async function reload(){
     sb.from('omra_family_viewers').select('viewer_user_id,revoked_at').eq('invite_id',owner.id)
    ]);
    if(s.error)throw s.error;if(v.error)throw v.error;
-   stops=s.data||[];viewers=v.data||[];await readPhotos(owner.id);
+   stops=s.data||[];viewers=v.data||[];
    if(owner.avatar_path){const a=await sb.storage.from('wv-omra-private').createSignedUrl(owner.avatar_path,900);avatarUrl=a.data?.signedUrl||'';}
+   try{await readPhotos(owner.id)}catch(e){console.warn('Gallery unavailable',e?.message||e)}
    if(!selected||!stops.some(s=>s.id===selected))selected=stops[0]?.id||'';
   }else{
    const grants=await sb.from('omra_family_viewers').select('invite_id').eq('viewer_user_id',user.id).is('revoked_at',null).limit(1);
@@ -84,23 +89,61 @@ function profileAvatarHtml(){
  if(!owner)return '<span>👤</span>';
  return '<div class="story-owner-avatar"><div class="story-owner-avatar-image">'+(avatarUrl?'<img src="'+esc(avatarUrl)+'" alt="صورة المعتمر" loading="lazy">':'<span>👤</span>')+'</div><label class="story-owner-avatar-edit" title="صورة اختيارية">📷<input type="file" id="story-avatar-input" accept="image/jpeg,image/png,image/webp" aria-label="إضافة أو تغيير صورة البروفايل"></label></div>';
 }
+async function compressAvatar(file){
+ if(!file?.size||file.size>25*1024*1024)throw Error('الصورة فارغة أو أكبر من 25 ميغا.');
+ const type=String(file.type||'').toLowerCase();
+ if(!type.startsWith('image/')&&!/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name||''))throw Error('اختار تصويرة من التليفون.');
+ const objectURL=URL.createObjectURL(file);
+ try{
+  const img=await new Promise((resolve,reject)=>{
+   const pic=new Image();
+   pic.onload=()=>resolve(pic);
+   pic.onerror=()=>reject(Error('صيغة الصورة موش مدعومة؛ جرّب JPG أو PNG.'));
+   pic.src=objectURL;
+  });
+  const scale=Math.min(1,1200/Math.max(img.naturalWidth,img.naturalHeight));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));
+  canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+  const ctx=canvas.getContext('2d');
+  if(!ctx)throw Error('ما نجّمتش نجهّز الصورة.');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.8));
+  if(!blob?.size||blob.size>3*1024*1024)throw Error('الصورة كبيرة برشا حتى بعد التصغير.');
+  return new File([blob],'profile.jpg',{type:'image/jpeg'});
+ }finally{URL.revokeObjectURL(objectURL)}
+}
 async function uploadAvatar(files){
  if(busy||!owner||!user||!files?.length)return;
- const file=files[0];
- if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>3*1024*1024||!file.size){notify('صورة البروفايل JPG / PNG / WEBP وأقل من 3 ميغا.',true);return}
- busy=true;
- const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
- const path=user.id+'/'+owner.id+'/avatar/'+crypto.randomUUID()+'.'+ext;
- const previous=owner.avatar_path;
+ const file=files[0],userId=user.id,inviteId=owner.id,previous=owner.avatar_path;
+ busy=true;avatarMsg='⏳ جاري تجهيز الصورة وحفظها…';update();
+ let path='',uploaded=false,saved=false;
  try{
-  const up=await sb.storage.from('wv-omra-private').upload(path,file,{contentType:file.type,upsert:false});
+  const photo=await compressAvatar(file);
+  path=userId+'/'+inviteId+'/avatar/'+crypto.randomUUID()+'.jpg';
+  const up=await sb.storage.from('wv-omra-private').upload(path,photo,{contentType:'image/jpeg',upsert:false});
   if(up.error)throw up.error;
-  const r=await sb.rpc('omra_set_story_avatar',{p_invite_id:owner.id,p_path:path});
-  if(r.error){await sb.storage.from('wv-omra-private').remove([path]);throw r.error}
-  if(previous)await sb.storage.from('wv-omra-private').remove([previous]);
-  await reload();notify('تبدّلت صورة البروفايل ✅');
- }catch(e){notify('تعذّر رفع الصورة: '+String(e.message||e).slice(0,140),true)}
- finally{busy=false}
+  uploaded=true;
+  const r=await sb.rpc('omra_set_story_avatar',{p_invite_id:inviteId,p_path:path});
+  if(r.error)throw r.error;
+  saved=true;
+  const check=await sb.from('omra_story_invites').select('avatar_path').eq('id',inviteId).maybeSingle();
+  if(check.error)throw check.error;
+  if(check.data?.avatar_path!==path)throw Error('ما تأكّدش تسجيل الصورة في قاعدة البيانات.');
+  // Updating the original pointer is the source of truth. Clean up is best effort.
+  if(previous&&previous!==path){try{await sb.storage.from('wv-omra-private').remove([previous])}catch(_){}}
+  await reload();
+  avatarMsg='✅ صورة البروفايل تحفّظت بنجاح';
+  notify(avatarMsg);
+ }catch(e){
+  if(uploaded&&!saved&&path){try{await sb.storage.from('wv-omra-private').remove([path])}catch(_){}}
+  const message=String(e?.message||e);
+  avatarMsg=/(PGRST202|PGRST204|42703|omra_set_story_avatar|avatar_path|schema cache)/i.test(message)
+   ?'⚠️ يلزم تفعيل ملف Supabase fix-profile-avatar.sql'
+   :'⚠️ تعذّر حفظ صورة البروفايل: '+message.slice(0,140);
+  notify(avatarMsg,true);
+ }finally{busy=false;update()}
 }
 async function disableFamilyAccess(){
  if(!owner||busy||!confirm('تحب توقف كل أكواد العائلة وتلغي وصول الناس اللي يتابعوك؟'))return;
@@ -266,6 +309,6 @@ document.addEventListener('click',e=>{
  if(rv)revoke(rv.dataset.extraRevoke);
 });
 sb.auth.onAuthStateChange(()=>{Promise.resolve().then(reload)});
-window.WVStoryExtras={render,reload,renderPhotosForKey,profileAvatarHtml};
+window.WVStoryExtras={render,reload,renderPhotosForKey,profileAvatarHtml,avatarMessage:()=>avatarMsg};
 reload();
 })();
