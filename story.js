@@ -22,6 +22,7 @@ const defaults=[
 ];
 let user=null,invite=null,trip=null,stops=[],busy=false,error='',message='',editKey='',loading=false;
 let authMode='login',authEmail='',pendingConfirmation=false;
+let accountStatus='loading',accountActivated=false;
 let recoveryActive=false,recoveryReady=false;
 const recoveryFragment=new URLSearchParams(location.hash.slice(1));
 const recoveryQuery=new URLSearchParams(location.search);
@@ -44,7 +45,7 @@ const steps=()=>{
 const notify=(s,isError=false)=>{error=isError?s:'';message=isError?'':s;update()};
 function update(){if(state.tab==='more'&&state.page==='story'&&document.getElementById('app'))render()}
 async function reload(){
- if(!db||!user)return;
+ if(!db||!user||accountStatus!=='approved'||!accountActivated)return;
  loading=true;update();
  try{
   const r=await db.from('omra_story_invites').select('id,customer_name,program_id,omra_programs(id,title,start_date,end_date,airline,route,hotel)').eq('linked_user_id',user.id).is('revoked_at',null).order('claimed_at',{ascending:false}).limit(1);
@@ -59,6 +60,32 @@ async function reload(){
  }catch(e){const m=String(e.message||e);error=/PGRST205|PGRST204|schema cache|Could not find the table/i.test(m)?'خدمة ربط العمرة مازالت موش مفعّلة في قاعدة البيانات. إدارة Walid Voyages يلزمها تفعّل إعدادات الرحلات في Supabase.':'تعذّر تحميل رحلتك: '+m.slice(0,160);invite=null;trip=null;stops=[]}
  finally{loading=false;update();if(window.WVStoryExtras?.reload)Promise.resolve().then(()=>window.WVStoryExtras.reload())}
 }
+async function loadAccountStatus(){
+ if(!user){accountStatus='loading';accountActivated=false;return false}
+ const r=await db.from('omra_account_requests').select('status,activated_at').eq('user_id',user.id).maybeSingle();
+ if(r.error){accountStatus='error';accountActivated=false;notify('فشل تحميل حالة التسجيل: '+r.error.message,true);return false}
+ accountStatus=r.data?.status||'pending';accountActivated=!!r.data?.activated_at;
+ return accountStatus==='approved'&&accountActivated;
+}
+function approvalPage(){
+ const waiting=accountStatus==='pending',accepted=accountStatus==='approved'&&!accountActivated;
+ return '<section class="card story-panel"><div class="story-symbol">'+(waiting?'⏳':accepted?'🔑':'🚫')+'</div><h2>'+
+ (waiting?'طلبك في انتظار موافقة الإدارة':accepted?'تمّ قبول طلبك':'حسابك غير مفعل')+'</h2><p>'+
+ (waiting?'طلبك وصل إلى Partie Admin. بعد الموافقة تاخو كود تفعيل من الوكالة، بلا تأكيد إيميل.':accepted?'أدخل كود التفعيل اللي تعطيهولك الوكالة عبر WhatsApp.':'اتصل بوكالة Walid Voyages لمراجعة طلبك.')+'</p>'+
+ (accepted?'<form id="story-activate" class="story-form"><label>كود تفعيل الحساب</label><input name="code" dir="ltr" autocomplete="off" placeholder="WV-ACT-..." minlength="39" required><button class="btn lime full" type="submit">تفعيل الحساب</button></form>':'')+
+ '<button class="btn light full" type="button" data-story="check-approval">🔄 تحديث حالة الطلب</button><button class="btn light full" type="button" data-story="logout">خروج</button></section>';
+}
+async function activate(e){
+ e.preventDefault();if(!user)return;
+ const code=String(new FormData(e.target).get('code')||'');
+ try{const r=await db.rpc('omra_activate_signup',{p_code:code});if(r.error)throw r.error;
+  if(!r.data)throw Error('الكود غير صحيح أو انتهى');
+  if(await loadAccountStatus())await reload();
+  notify('✅ حسابك تفعّل');
+ }catch(e){notify('خطأ التفعيل: '+String(e.message||e).slice(0,150),true)}
+ update();
+}
+async function checkApproval(){if(user){if(await loadAccountStatus())await reload();update()}}
 async function boot(){
  if(!db)return;
  try{
@@ -72,8 +99,8 @@ async function boot(){
    }
    const next=session?.user||null;
    if(next?.id!==user?.id){
-    user=next;invite=null;trip=null;stops=[];update();
-    if(user&&!recoveryActive)Promise.resolve().then(reload);
+    user=next;invite=null;trip=null;stops=[];accountStatus='loading';accountActivated=false;update();
+    if(user&&!recoveryActive)Promise.resolve().then(async()=>{if(await loadAccountStatus())await reload();update()});
    }
   });
   const result=await db.auth.getUser();
@@ -90,7 +117,7 @@ async function boot(){
    recoveryActive=true;recoveryReady=true;authMode='set-password';
    error='';message='تم التثبّت من رابط الإيميل. اختار كلمة سر جديدة.';
    Promise.resolve().then(showStoryFromAuthLink);
-  }else if(user&&!recoveryActive)await reload();
+  }else if(user&&!recoveryActive){if(await loadAccountStatus())await reload()}
  }catch(e){console.warn('Story auth unavailable:',e?.message||e)}
  update();
 }
@@ -110,18 +137,19 @@ function loginPage(){
    '<p class="story-auth-privacy">ما تشاركش كلمة السر أو رابط الاسترجاع مع أي حد.</p></section>';
  }
  return header+
- (pendingConfirmation?'<div class="story-verify-notice"><span>✉️</span><div><strong>تثبّت من بريدك الإلكتروني</strong><p>شوف رسالة تأكيد Supabase في بريدك أو Spam/Junk.</p></div></div>':'')+
+ 
  '<div class="story-auth-tabs" role="tablist" aria-label="نوع الحساب">'+
  '<button type="button" data-story-auth-mode="login" class="'+(authMode==='login'?'active':'')+'" aria-selected="'+(authMode==='login')+'">دخول</button>'+
  '<button type="button" data-story-auth-mode="signup" class="'+(authMode==='signup'?'active':'')+'" aria-selected="'+(authMode==='signup')+'">إنشاء حساب</button></div>'+
  '<form id="story-login-form" class="story-auth-form" autocomplete="on">'+
+ (signup?'<div class="story-auth-field"><label>الاسم واللقب</label><input name="full_name" minlength="2" maxlength="120" required placeholder="اسمك ولقبك"></div><div class="story-auth-field"><label>رقم WhatsApp</label><input name="phone" dir="ltr" type="tel" minlength="8" maxlength="25" required placeholder="+216 XX XXX XXX"></div>':'')+
  '<div class="story-auth-field"><label for="story-email">البريد الإلكتروني</label><div class="story-auth-input-wrap"><span class="story-auth-input-icon" aria-hidden="true">✉</span><input id="story-email" type="email" inputmode="email" autocomplete="email" name="email" dir="ltr" required placeholder="exemple@gmail.com" value="'+safe(authEmail)+'"></div></div>'+
  (!recover?'<div class="story-auth-field"><label for="story-password">كلمة السر</label><div class="story-auth-input-wrap"><span class="story-auth-input-icon" aria-hidden="true">♧</span><input id="story-password" type="password" name="password" autocomplete="'+(signup?'new-password':'current-password')+'" minlength="'+(signup?'8':'6')+'" required placeholder="كلمة السر متاعك"><button type="button" class="story-password-toggle" data-story-auth="toggle-pass">إظهار</button></div></div>':'')+
  '<button type="submit" id="story-auth-submit" class="story-auth-submit" '+(busy?'disabled':'')+'>'+(busy?'جاري التثبّت…':recover?'إرسال رابط الاسترجاع':signup?'إنشاء حسابي':'دخول إلى عمرتي')+'</button></form>'+
  '<div class="story-auth-support">'+
  (!recover?'<button type="button" data-story-auth-mode="recover">نسيت كلمة السر؟</button>':'<button type="button" data-story-auth-mode="login">رجوع للدخول</button>')+
- (pendingConfirmation?'<button type="button" data-story-auth="resend">إعادة إرسال تأكيد البريد</button>':'')+
- '</div><p class="story-auth-privacy">🔒 التسجيل مفتوح للجميع من غير كود. ربط حجز العمرة الخاص يتطلب كود الوكالة فقط.</p></section>';
+ 
+ '</div><p class="story-auth-privacy">🔒 التسجيل يحتاج موافقة الإدارة. بعد القبول تتسلّم كود تفعيل الحساب، ثم تنجم تربط حجز العمرة بكود آخر.</p></section>';
 }
 
 function linkPage(){
@@ -154,11 +182,11 @@ function journeyPage(){
 }
 function pageHtml(){
  return viewTitle('عمرتي حكاية','رحلتي، مراحلي وذكرياتي الخاصة')+
- (!configured?'<div class="card story-panel">خدمة حسابات المعتمرين غير متاحة حاليًا.</div>':recoveryActive||!user?loginPage():loading?'<div class="card story-panel">جاري تحميل رحلتك الخاصة…</div>':!invite?linkPage():journeyPage())+(window.WVStoryExtras?.render?.()||'');
+ (!configured?'<div class="card story-panel">خدمة حسابات المعتمرين غير متاحة حاليًا.</div>':recoveryActive||!user?loginPage():accountStatus==='loading'?'<div class="card story-panel">جاري التثبّت من الطلب…</div>':!(accountStatus==='approved'&&accountActivated)?approvalPage():loading?'<div class="card story-panel">جاري تحميل رحلتك الخاصة…</div>':!invite?linkPage():journeyPage())+(window.WVStoryExtras?.render?.()||'');
 }
 async function handleLogin(event){
  event.preventDefault();if(busy||!db)return;
- const form=new FormData(event.target),email=String(form.get('email')||'').trim().toLowerCase(),password=String(form.get('password')||'');
+ const form=new FormData(event.target),email=String(form.get('email')||'').trim().toLowerCase(),password=String(form.get('password')||''),fullName=String(form.get('full_name')||'').trim(),phone=String(form.get('phone')||'').trim();
  authEmail=email;busy=true;error='';message='';
  const submit=document.getElementById('story-auth-submit');
  if(submit){submit.disabled=true;submit.textContent='جاري التثبّت…'}
@@ -168,21 +196,22 @@ async function handleLogin(event){
    if(r.error)throw r.error;
    notify('إذا الإيميل مسجّل، تصلك رسالة باش تبدّل كلمة السر. تفقّد صندوق الوارد والـSpam.');
   }else if(authMode==='signup'){
-   const r=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname+'#more/story'}});
+   if(fullName.length<2||phone.length<8)throw Error('لازم الاسم ورقم WhatsApp.');
+   const r=await db.auth.signUp({email,password,options:{data:{full_name:fullName,phone},emailRedirectTo:location.origin+location.pathname+'#more/story'}});
    if(r.error)throw r.error;
    if(!r.data?.session){
-    pendingConfirmation=true;
-    notify('تمّ إرسال طلب التسجيل. إذا تأكيد البريد مفعل في Supabase، افتح إيميلك واضغط على رابط التأكيد وبعد اعمل Login.');
+    notify('طلبك تسجّل، أما خيار تأكيد الإيميل مازال مفعّل في Supabase. لازم الإدارة تعطّلو.',true);
    }else{
-    user=r.data.user;pendingConfirmation=false;await reload();
-    notify('✅ حسابك تحلّ بنجاح، تنجم تستعمل التطبيق بلا كود. ربط عمرة Walid Voyages اختياري.');
+    user=r.data.user;
+    await loadAccountStatus();
+    notify('✅ طلبك وصل إلى الإدارة. تستنى الموافقة وكود التفعيل.');
    }
   }else{
    const r=await db.auth.signInWithPassword({email,password});
    if(r.error){
     const raw=String(r.error.message||'').toLowerCase();
     const translation=/email not confirmed|email_not_confirmed/.test(raw)
-      ?'الإيميل مازال ما تأكّدش. افتح رسالة التأكيد في بريدك، أو اضغط إعادة الإرسال.'
+      ?'تأكيد الإيميل مازال مفعّل في Supabase. يلزم الإدارة تعطل الخيار هذا.'
       :/invalid login credentials|invalid_credentials/.test(raw)
       ?'الإيميل أو كلمة السر غير صحيحين، أو الحساب مازال ما تفعّلش. تأكد من الحساب واسترجع كلمة السر إذا لزم.'
       :/rate limit|too many/.test(raw)
@@ -192,8 +221,8 @@ async function handleLogin(event){
     throw new Error(translation);
    }
    user=r.data.user;pendingConfirmation=false;
-   await reload();
-   notify('✅ تمّ الدخول بنجاح، التطبيق مفتوح ليك. كود الرحلة اختياري.');
+   if(await loadAccountStatus())await reload();
+   notify('✅ تمّ الدخول. الحسابات الجديدة تستنّى موافقة الإدارة.');
   }
  }catch(e){notify('تعذّر إكمال العملية: '+String(e.message||e).slice(0,220),true)}
  finally{busy=false;const b=document.getElementById('story-auth-submit');if(b){b.disabled=false;if(b.textContent==='جاري التثبّت…')b.textContent=authMode==='signup'?'إنشاء حسابي':authMode==='recover'?'إرسال رابط الاسترجاع':'دخول إلى عمرتي'}}
@@ -272,6 +301,7 @@ async function saveStop(event){
 document.addEventListener('submit',e=>{
  if(e.target.id==='story-login-form')handleLogin(e);
  else if(e.target.id==='story-reset-form')handleResetPassword(e);
+  else if(e.target.id==='story-activate')activate(e);
  else if(e.target.id==='story-code-form')handleCode(e);
  else if(e.target.id==='story-add-form')addStop(e);
  else if(e.target.id==='story-stop-form')saveStop(e);
@@ -302,7 +332,8 @@ document.addEventListener('click',e=>{
  const b=e.target.closest('[data-story]');
  if(!b)return;
  if(b.dataset.story==='close'){editKey='';update()}
- if(b.dataset.story==='logout'){if(db)db.auth.signOut().then(()=>{user=null;invite=null;trip=null;stops=[];editKey='';message='';error='';update()})}
+ if(b.dataset.story==='check-approval'){checkApproval();return}
+ if(b.dataset.story==='logout'){if(db)db.auth.signOut().then(()=>{user=null;invite=null;trip=null;stops=[];accountStatus='loading';accountActivated=false;editKey='';message='';error='';update()})}
 });
 window.WVStory={pageHtml,hasAccount:()=>!!user,hasJourney:()=>!!invite,refresh:reload,refreshView:update,getMediaContext:(key)=>{const step=steps().find(s=>s.key===key);return step&&user&&invite?{userId:user.id,inviteId:invite.id,step:{key:step.key,title:step.title,order:step.order,storedId:step.stored?.id||null}}:null}};
 boot();

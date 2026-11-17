@@ -35,6 +35,7 @@ function paint(){
  if(view==='edit'){editPage();return}
  if(view==='settings'){settingsPage();return}
  if(view==='story-invites'){storyInvitesPage();return}
+ if(view==='signups'){signupRequestsPage();return}
   if(view==='monitor'){monitorPage();return}
  if(view==='custom-adhkar'){customAdhkarPage();return}
  dashboard()
@@ -66,12 +67,13 @@ function dashboard(){
  const upcoming=items.filter(x=>x.end_date>=today).length;
  const filtered=items.filter(x=>[x.title,x.airline,x.hotel,x.tag].join(' ').toLowerCase().includes(query.toLowerCase()));
  root.innerHTML='<header class="head"><div>'+brand+'<h1>إدارة برامج العمرة</h1><p class="muted">'+esc(user?.email||'')+'</p></div><div class="buttons"><a href="./" target="_blank" rel="noopener">فتح التطبيق</a><button id="logout" class="btn light">خروج</button></div></header>'+
- '<div class="admin-special"><button id="reminder-settings" class="btn light">🔔 إدارة التذكيرات ومواقيتها</button><button id="story-invites-open" class="btn light">🕋 حسابات المعتمرين وكود الرحلة</button><button id="monitor-open" class="btn primary">👥 متابعة جميع المعتمرين</button><button id="custom-adhkar-open" class="btn light">📿 إضافة أذكار للتطبيق</button><span class="muted">إعدادات تظهر للجميع بعد الحفظ في Supabase</span></div><div class="stats"><div class="stat"><strong>'+items.length+'</strong><span>البرامج الكل</span></div><div class="stat"><strong>'+published+'</strong><span>المنشورة</span></div><div class="stat"><strong>'+upcoming+'</strong><span>القادمة والحالية</span></div></div>'+
+ '<div class="admin-special"><button id="reminder-settings" class="btn light">🔔 إدارة التذكيرات ومواقيتها</button><button id="story-invites-open" class="btn light">🕋 حسابات المعتمرين وكود الرحلة</button><button id="signups-open" class="btn primary">📝 طلبات التسجيل — قبول / رفض</button><button id="monitor-open" class="btn primary">👥 متابعة جميع المعتمرين</button><button id="custom-adhkar-open" class="btn light">📿 إضافة أذكار للتطبيق</button><span class="muted">إعدادات تظهر للجميع بعد الحفظ في Supabase</span></div><div class="stats"><div class="stat"><strong>'+items.length+'</strong><span>البرامج الكل</span></div><div class="stat"><strong>'+published+'</strong><span>المنشورة</span></div><div class="stat"><strong>'+upcoming+'</strong><span>القادمة والحالية</span></div></div>'+
  '<section class="card"><h2>البرامج</h2><p class="muted">الـSauvegarde تسجّل كلّ تعديل في قاعدة Supabase. البرنامج غير المنشور ما يظهرش للزائر.</p>'+alerts()+'<div class="toolbar"><input type="search" id="search" value="'+esc(query)+'" placeholder="ابحث عن برنامج…"><button id="new" class="btn primary">+ إضافة عمرة</button></div>'+
  '<div class="tablewrap"><table><thead><tr><th>اسم العمرة</th><th>التواريخ</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="rows">'+(filtered.length?filtered.map(row).join(''):'<tr><td colspan="5">ما فماش برامج بعد.</td></tr>')+'</tbody></table></div></section><p class="bottom">© Walid Voyages · Espace Admin</p>';
  document.getElementById('logout').onclick=logout;
  document.getElementById('reminder-settings').onclick=loadSettings;
  document.getElementById('story-invites-open').onclick=loadStoryInvites;
+ document.getElementById('signups-open').onclick=loadSignupRequests;
   document.getElementById('monitor-open').onclick=loadMonitor;
  document.getElementById('custom-adhkar-open').onclick=loadCustomAdhkar;
  document.getElementById('new').onclick=()=>{editing=null;view='edit';errorMsg('');paint()};
@@ -410,6 +412,54 @@ async function monitorLock(){
     monitorState.unlocked=false;monitorStops=[];monitorPhotos=[];monitorUrls={};monitorInfo='تسكّرت المتابعة.';
   }catch(e){monitorError=String(e.message||e)}
   finally{monitorBusy=false;paint()}
+}
+
+let signupRows=[],signupError='',signupMessage='',signupSecret='',signupBusy=false;
+async function loadSignupRequests(){
+ view='signups';signupBusy=true;signupError='';signupMessage='';paint();
+ const r=await sb.from('omra_account_requests')
+  .select('user_id,email,full_name,phone,status,requested_at,reviewed_at,activated_at')
+  .order('requested_at',{ascending:false}).limit(350);
+ if(r.error)signupError='تعذّر تحميل طلبات التسجيل: '+String(r.error.message).slice(0,130);
+ else signupRows=r.data||[];
+ signupBusy=false;paint();
+}
+function signupRequestsPage(){
+ const pending=signupRows.filter(x=>x.status==='pending').length;
+ const waiting=signupRows.filter(x=>x.status==='approved'&&!x.activated_at).length;
+ root.innerHTML='<header class="head"><div>'+brand+'<h1>📝 طلبات تسجيل الحسابات</h1><p class="muted">الطلبات الجديدة تظهر هنا؛ لازم إيقاف Confirm email في Supabase.</p></div><button id="signup-back" class="btn light">رجوع</button></header>'+
+ (signupError?'<p class="alert">'+esc(signupError)+'</p>':'')+
+ (signupMessage?'<p class="alert good">'+esc(signupMessage)+'</p>':'')+
+ (signupSecret?'<section class="card admin-secret"><h2>🔑 كود تفعيل الحساب</h2><p>انسخو توّا: الكود يظهر مرّة واحدة فقط. ابعثه للحريف في WhatsApp، ما تنشروش للعموم.</p><code dir="ltr" id="signup-code">'+esc(signupSecret)+'</code><button class="btn primary" type="button" id="signup-copy">نسخ الكود</button><button class="btn light" type="button" id="signup-close-secret">إخفاء الكود</button></section>':'')+
+ '<div class="stats"><div class="stat"><strong>'+pending+'</strong><span>طلبات جديدة</span></div><div class="stat"><strong>'+waiting+'</strong><span>في انتظار التفعيل</span></div><div class="stat"><strong>'+signupRows.length+'</strong><span>جميع الحسابات</span></div></div>'+
+ '<section class="card"><div class="toolbar"><h2>طلبات الحرفاء</h2><button id="signup-reload" class="btn light">🔄 تحديث</button></div>'+
+ (signupBusy?'<p>جاري تحميل الطلبات…</p>':'<div class="tablewrap"><table><thead><tr><th>الحريف</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>'+
+ (signupRows.length?signupRows.map(x=>'<tr><td><strong>'+esc(x.full_name||'مستخدم')+'</strong><p dir="ltr">'+esc(x.email)+'</p><small dir="ltr">'+esc(x.phone||'—')+'</small></td><td>'+
+ (x.status==='pending'?'⏳ انتظار':x.status==='rejected'?'❌ مرفوض':x.activated_at?'✅ مفعّل':'🔑 مقبول — يستنى الكود')+
+ '</td><td><div class="buttons">'+
+ ((!x.activated_at)?'<button class="btn primary small" data-signup-user="'+esc(x.user_id)+'" data-signup-decision="approved">'+(x.status==='approved'?'إعادة إصدار كود':'✅ Accept + Code')+'</button>':'')+
+ ((!x.activated_at&&x.status!=='rejected')?'<button class="btn danger small" data-signup-user="'+esc(x.user_id)+'" data-signup-decision="rejected">❌ Refuser</button>':'')+
+ '</div></td></tr>').join(''):'<tr><td colspan="3">ما فماش طلبات حتى توّا.</td></tr>')+'</tbody></table></div>')+
+ '<p class="hint">كود تفعيل الحساب WV-ACT مختلف عن كود ربط حجز العمرة WV.</p></section>';
+ document.getElementById('signup-back').onclick=()=>{view='dashboard';paint()};
+ document.getElementById('signup-reload').onclick=()=>{signupSecret='';loadSignupRequests()};
+ document.getElementById('signup-copy')?.addEventListener('click',()=>navigator.clipboard.writeText(signupSecret).then(()=>{document.getElementById('signup-copy').textContent='تم النسخ ✓'}));
+ document.getElementById('signup-close-secret')?.addEventListener('click',()=>{signupSecret='';paint()});
+ document.querySelectorAll('[data-signup-decision]').forEach(b=>b.onclick=()=>reviewSignup(b.dataset.signupUser,b.dataset.signupDecision));
+}
+async function reviewSignup(id,decision){
+ if(signupBusy||!id||!['approved','rejected'].includes(decision))return;
+ if(decision==='rejected'&&!confirm('متأكد تحب ترفض الحساب؟'))return;
+ signupBusy=true;signupError='';signupMessage='';signupSecret='';paint();
+ const r=await sb.rpc('omra_admin_review_signup',{p_user_id:id,p_decision:decision});
+ if(r.error){signupError='فشل القرار: '+String(r.error.message).slice(0,160)}
+ else if(decision==='approved'){signupSecret=String(r.data||'');signupMessage='الحساب مقبول. انسخ الكود وابعثو عبر WhatsApp.'}
+ else signupMessage='تمّ رفض الحساب.';
+ const rows=await sb.from('omra_account_requests')
+  .select('user_id,email,full_name,phone,status,requested_at,reviewed_at,activated_at')
+  .order('requested_at',{ascending:false}).limit(350);
+ if(!rows.error)signupRows=rows.data||[];
+ signupBusy=false;paint();
 }
 
 async function logout(){await sb.auth.signOut();user=null;items=[];view='login';monitorState={configured:false,unlocked:false};monitorInvites=[];monitorStops=[];monitorPhotos=[];monitorUrls={};errorMsg('');paint()}
