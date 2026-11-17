@@ -135,8 +135,7 @@ async function uploadAvatar(files){
   const up=await sb.storage.from('wv-omra-private').upload(path,photo,{contentType:'image/jpeg',upsert:false});
   if(up.error)throw up.error;
   uploaded=true;
-  const r=await sb.from('omra_client_profiles').upsert({user_id:userId,avatar_path:path},{onConflict:'user_id'});
-  if(r.error)throw r.error;
+  await saveProfileFields({avatar_path:path});
   saved=true;
   const check=await sb.from('omra_client_profiles').select('avatar_path').eq('user_id',userId).maybeSingle();
   if(check.error)throw check.error;
@@ -323,14 +322,26 @@ document.addEventListener('click',e=>{
  if(rv)revoke(rv.dataset.extraRevoke);
 });
 sb.auth.onAuthStateChange(()=>{Promise.resolve().then(reload)});
+async function saveProfileFields(fields){
+ if(!user)throw Error('لازم تدخل لحسابك.');
+ const updated=await sb.from('omra_client_profiles').update(fields).eq('user_id',user.id).select('user_id');
+ if(updated.error)throw updated.error;
+ if(updated.data?.length)return;
+ const inserted=await sb.from('omra_client_profiles').insert({user_id:user.id,...fields});
+ if(inserted.error){
+  if(inserted.error.code!=='23505')throw inserted.error;
+  const retry=await sb.from('omra_client_profiles').update(fields).eq('user_id',user.id);
+  if(retry.error)throw retry.error;
+ }
+}
+
 async function updateProfileName(e){
  e.preventDefault();if(!user||profileBusy)return;
  const f=new FormData(e.target),name=String(f.get('full_name')||'').trim();
  if(name.length<2||name.length>120){avatarMsg='⚠️ اكتب اسم بين 2 و120 حرف.';update();return;}
  profileBusy=true;
  try{
-  const r=await sb.from('omra_client_profiles').upsert({user_id:user.id,full_name:name},{onConflict:'user_id'});
-  if(r.error)throw r.error;
+  await saveProfileFields({full_name:name});
   profileInfo={...(profileInfo||{}),user_id:user.id,full_name:name};
   avatarMsg='✅ الاسم الشخصي تحفّظ';
  }catch(err){avatarMsg='⚠️ ما نجّمتش نسجّل الاسم: '+String(err.message||err).slice(0,100)}
