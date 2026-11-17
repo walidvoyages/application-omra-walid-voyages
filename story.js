@@ -200,7 +200,8 @@ async function handleLogin(event){
    const r=await db.auth.signUp({email,password,options:{data:{full_name:fullName,phone},emailRedirectTo:location.origin+location.pathname+'#more/story'}});
    if(r.error)throw r.error;
    if(!r.data?.session){
-    notify('طلبك تسجّل، أما خيار تأكيد الإيميل مازال مفعّل في Supabase. لازم الإدارة تعطّلو.',true);
+    authMode='login';
+    notify('✅ طلب التسجيل وصل إلى الإدارة. بعد الموافقة يتأكّد حسابك آليًا ويبعثولك كود تفعيل عبر WhatsApp. ما تستحقش تضغط على رابط إيميل.');
    }else{
     user=r.data.user;
     await loadAccountStatus();
@@ -211,13 +212,13 @@ async function handleLogin(event){
    if(r.error){
     const raw=String(r.error.message||'').toLowerCase();
     const translation=/email not confirmed|email_not_confirmed/.test(raw)
-      ?'تأكيد الإيميل مازال مفعّل في Supabase. يلزم الإدارة تعطل الخيار هذا.'
+      ?'الحساب مازال في انتظار موافقة إدارة Walid Voyages. بعد القبول تنجم تعمل Login بالإيميل وكلمة السر.'
       :/invalid login credentials|invalid_credentials/.test(raw)
       ?'الإيميل أو كلمة السر غير صحيحين، أو الحساب مازال ما تفعّلش. تأكد من الحساب واسترجع كلمة السر إذا لزم.'
       :/rate limit|too many/.test(raw)
       ?'محاولات كثيرة. جرّب بعد شوية أو استعمل استرجاع كلمة السر.'
       :r.error.message;
-    if(/email not confirmed|email_not_confirmed/.test(raw))pendingConfirmation=true;
+    
     throw new Error(translation);
    }
    user=r.data.user;pendingConfirmation=false;
