@@ -1,0 +1,436 @@
+{
+  "version": "2026-11-21",
+  "intro": "دليل تعليمي للمزارات التاريخية بمكة والمدينة. زيارة المعالم ليست كلها من مناسك العمرة، والأوقات والدخول يخضعان للتعليمات المحلية.",
+  "cities": [
+    {
+      "id": "madina",
+      "name": "المدينة المنورة",
+      "subtitle": "مساجد ومواقع من السيرة النبوية"
+    },
+    {
+      "id": "makkah",
+      "name": "مكة المكرمة",
+      "subtitle": "معالم الحرم والمشاعر والمواقع التاريخية"
+    }
+  ],
+  "places": [
+    {
+      "id": "nabawi",
+      "city": "madina",
+      "name": "المسجد النبوي الشريف",
+      "category": "مسجد",
+      "emoji": "🕌",
+      "short": "مسجد رسول الله ﷺ وأحد أعظم مساجد الإسلام.",
+      "history": "بناه النبي محمد ﷺ بعد الهجرة إلى المدينة المنورة، وتتابعت عليه التوسعات عبر العصور حتى أصبح من أكبر المساجد في العالم. يضم الروضة الشريفة وموضع الحجرة النبوية.",
+      "importance": "تشرع الصلاة فيه وزيارته بآداب المسجد والسكينة واحترام المصلين.",
+      "tips": "ادخل بهدوء، واتبع بوابات الحركة المخصصة، ولا تزاحم الزوار.",
+      "photo": {
+        "file": "Al Masjid an Nabawi.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Al%20Masjid%20an%20Nabawi.jpg"
+      },
+      "map": "Al Masjid an Nabawi Medina Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-islamic-historical-sites-in-al-madinah-al-munawarah"
+    },
+    {
+      "id": "rawdah",
+      "city": "madina",
+      "name": "الروضة الشريفة",
+      "category": "داخل المسجد النبوي",
+      "emoji": "🤍",
+      "short": "موضع مبارك داخل المسجد النبوي بين بيت النبي ﷺ ومنبره.",
+      "history": "ورد في الحديث الصحيح: «ما بين بيتي ومنبري روضة من رياض الجنة». وهي منطقة محددة داخل المسجد النبوي يقصدها الزائرون للصلاة عند السماح بالدخول.",
+      "importance": "لها فضل ثابت في السنة، وزيارتها تنظّم بتصاريح؛ ليست شرطًا لصحة العمرة.",
+      "tips": "تحقّق من تصريح الروضة ومواعيد الدخول عبر نسك، والتزم بالمسار المحدد.",
+      "photo": {
+        "file": "Masjid-Al-Nabawi Madinah.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Masjid-Al-Nabawi%20Madinah.jpg"
+      },
+      "representativePhoto": true,
+      "map": "Rawdah Al Sharifah Al Masjid an Nabawi Medina Saudi Arabia",
+      "source": "https://www.nusuk.sa/service-details/152"
+    },
+    {
+      "id": "quba",
+      "city": "madina",
+      "name": "مسجد قباء",
+      "category": "مسجد تاريخي",
+      "emoji": "🌴",
+      "short": "من أوائل المساجد التي أسسها الرسول ﷺ عند وصوله إلى المدينة.",
+      "history": "يقع في جنوب المدينة المنورة، وارتبط بأيام الهجرة النبوية. شهد المسجد توسعات متعددة لخدمة المصلين والزوار.",
+      "importance": "ثبت فضل إتيانه والصلاة فيه، وهو من أشهر محطات زيارة المدينة.",
+      "tips": "خصّص وقتًا للصلاة، واتبع التنظيم المحلي خاصة في أوقات الازدحام.",
+      "photo": {
+        "file": "Quba Mosque (2024).jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Quba%20Mosque%20(2024).jpg"
+      },
+      "map": "Quba Mosque Madinah Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-islamic-historical-sites-in-al-madinah-al-munawarah"
+    },
+    {
+      "id": "qiblatain",
+      "city": "madina",
+      "name": "مسجد القبلتين",
+      "category": "مسجد تاريخي",
+      "emoji": "🕌",
+      "short": "معلم مرتبط بتاريخ تحويل قبلة المسلمين إلى الكعبة المشرفة.",
+      "history": "يقع في المدينة المنورة واشتهر باسم مسجد القبلتين ارتباطًا بواقعة تحويل القبلة من بيت المقدس إلى المسجد الحرام في العهد النبوي.",
+      "importance": "تعرّف الزيارة الزائر على مرحلة مهمة من تاريخ الصلاة في الإسلام.",
+      "tips": "استفد من الشرح التاريخي، ولا تخصّص صلاة أو دعاء بفضل لا دليل عليه.",
+      "photo": {
+        "file": "Masjid Qiblatain.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Masjid%20Qiblatain.jpg"
+      },
+      "map": "Masjid Al Qiblatain Madinah Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-islamic-historical-sites-in-al-madinah-al-munawarah"
+    },
+    {
+      "id": "uhud",
+      "city": "madina",
+      "name": "جبل أُحد",
+      "category": "معلم تاريخي",
+      "emoji": "⛰️",
+      "short": "الجبل الذي وقعت قربه غزوة أُحد في السنة الثالثة للهجرة.",
+      "history": "يقع شمال المدينة المنورة. شهدت المنطقة معركة أُحد وما ارتبط بها من أحداث وعبر في السيرة النبوية.",
+      "importance": "مكان للتذكّر والتعرّف على تاريخ الغزوة والثبات والتضحية.",
+      "tips": "اكتفِ بالمناطق المفتوحة للزوار، وتجنب تسلق المواضع الخطرة.",
+      "photo": {
+        "file": "Jabal-e-Uhud.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Jabal-e-Uhud.jpg"
+      },
+      "map": "Mount Uhud Medina Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-islamic-historical-sites-in-al-madinah-al-munawarah"
+    },
+    {
+      "id": "uhud-martyrs",
+      "city": "madina",
+      "name": "مقبرة شهداء أُحد",
+      "category": "موقع تاريخي",
+      "emoji": "🌿",
+      "short": "موقع يذكّر بشهداء غزوة أُحد، ومنهم حمزة رضي الله عنه.",
+      "history": "تقع عند سفح جبل أُحد وتُعرف بارتباطها بمن استُشهدوا في الغزوة، وهو من أبرز المواضع التي يتعرّف فيها الزائر على السيرة.",
+      "importance": "للعظة وتذكر الصحابة والدعاء للموتى بالرحمة.",
+      "tips": "احترم حرمة المقبرة، واتبع التعليمات، ولا تلمس القبور طلبًا للبركة.",
+      "photo": {
+        "file": "Potrait Makam Syuhada Uhud.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Potrait%20Makam%20Syuhada%20Uhud.jpg"
+      },
+      "map": "Uhud Martyrs Cemetery Madinah Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-islamic-historical-sites-in-al-madinah-al-munawarah"
+    },
+    {
+      "id": "baqi",
+      "city": "madina",
+      "name": "مقبرة البقيع",
+      "category": "مقبرة تاريخية",
+      "emoji": "🌱",
+      "short": "مقبرة المدينة التاريخية التي دُفن فيها جمع من الصحابة وأهل البيت.",
+      "history": "تقع إلى جوار المسجد النبوي، وتعد من أشهر مقابر المسلمين منذ صدر الإسلام.",
+      "importance": "زيارتها للتذكر والدعاء للأموات وفق الأدب الشرعي والتنظيم القائم.",
+      "tips": "مواعيد الوصول قد تختلف، وقد تكون هناك قيود على الدخول والتصوير.",
+      "photo": {
+        "file": "Al-Baqi Cemetery 2021.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Al-Baqi%20Cemetery%202021.jpg"
+      },
+      "map": "Jannat al Baqi Madinah Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-islamic-historical-sites-in-al-madinah-al-munawarah"
+    },
+    {
+      "id": "khandaq",
+      "city": "madina",
+      "name": "المساجد السبعة ومنطقة الخندق",
+      "category": "موقع من السيرة",
+      "emoji": "🕌",
+      "short": "معالم قرب الموقع المرتبط بغزوة الخندق.",
+      "history": "تقع قرب جبل سلع، وسميت المساجد السبعة اصطلاحًا رغم اختلاف عدد المنشآت القائمة تاريخيًا. ترتبط بذاكرة غزوة الأحزاب والدفاع عن المدينة.",
+      "importance": "تعرف الزائر على أحداث غزوة الخندق وتاريخ المنطقة.",
+      "tips": "زيارة تاريخية تعليمية، وليست نسكًا مستقلًا.",
+      "photo": {
+        "file": "Battle of trench, Medina.JPG",
+        "source": "https://commons.wikimedia.org/wiki/File:Battle%20of%20trench%2C%20Medina.JPG"
+      },
+      "map": "The Seven Mosques Madinah Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-islamic-historical-sites-in-al-madinah-al-munawarah"
+    },
+    {
+      "id": "jumua",
+      "city": "madina",
+      "name": "مسجد الجمعة",
+      "category": "مسجد تاريخي",
+      "emoji": "🌙",
+      "short": "مسجد اشتهر بارتباطه بأول جمعة أقامها النبي ﷺ عند قدومه إلى المدينة.",
+      "history": "يقع على طريق قباء نحو المسجد النبوي، وهو من المساجد التي يقصدها المهتمون بتاريخ الهجرة والتأسيس.",
+      "importance": "معلم يشرح أحداث الطريق إلى المدينة وتاريخ صلاة الجمعة.",
+      "tips": "تعرّف على تاريخه مع مرشد موثوق، والتزم بالأوقات المتاحة.",
+      "photo": null,
+      "map": "Masjid Al Jumuah Medina Saudi Arabia",
+      "source": "https://saudipedia.com/en/antiquities-in-al-madinah-al-munawwarah-province"
+    },
+    {
+      "id": "ghamama",
+      "city": "madina",
+      "name": "مسجد الغمامة",
+      "category": "مسجد تاريخي",
+      "emoji": "☁️",
+      "short": "مسجد أثري قريب من المسجد النبوي ارتبط بمصلى العيد تاريخيًا.",
+      "history": "يقع غرب جنوب المسجد النبوي، واشتهر بارتباطه بمصلى النبي ﷺ في بعض المناسبات، وشهد ترميمات متعاقبة.",
+      "importance": "تاريخي وثقافي، لا يلزم المعتمر زيارته.",
+      "tips": "احترم الموقع التراثي وتأكد من السماح بالدخول.",
+      "photo": {
+        "file": "Mosque of Al-Ghamama 2026-05-13.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Mosque%20of%20Al-Ghamama%202026-05-13.jpg"
+      },
+      "map": "Masjid Al Ghamama Madinah Saudi Arabia",
+      "source": "https://saudipedia.com/en/antiquities-in-al-madinah-al-munawwarah-province"
+    },
+    {
+      "id": "printing",
+      "city": "madina",
+      "name": "مجمع الملك فهد لطباعة المصحف",
+      "category": "مَعْلَم ثقافي",
+      "emoji": "📖",
+      "short": "مجمع مختص بطباعة المصحف الشريف ونشره.",
+      "history": "تأسس في المدينة المنورة لخدمة طباعة المصاحف والإصدارات القرآنية وتوزيعها بلغات متعددة.",
+      "importance": "فرصة للتعرف على مراحل إعداد المصحف وطباعته والخدمات المتصلة بالقرآن.",
+      "tips": "الزيارة تخضع للمواعيد والتصاريح المتاحة، تحقق منها قبل التوجه.",
+      "photo": {
+        "file": "King Fahd Complex for the Printing of the Holy Quran.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:King%20Fahd%20Complex%20for%20the%20Printing%20of%20the%20Holy%20Quran.jpg"
+      },
+      "map": "King Fahd Complex for Printing Holy Quran Madinah Saudi Arabia",
+      "source": "https://haj.gov.sa/en/Al-Madinah-Al-Munawwarah/Sites-to-Visit-in-Madinah?madinahDestinationTab=visits-after-manasik"
+    },
+    {
+      "id": "ghars",
+      "city": "madina",
+      "name": "بئر غرس",
+      "category": "معلم تاريخي",
+      "emoji": "💧",
+      "short": "من الآبار القديمة التي ارتبطت بتاريخ المدينة المنورة.",
+      "history": "بئر تاريخية معروفة في المصادر المتعلقة بالمدينة ومعالم السيرة، وقد شهد موقعها عناية وإعادة تأهيل.",
+      "importance": "معلم للمعرفة التاريخية وليس من مناسك الحج أو العمرة.",
+      "tips": "لا تشرب من أي بئر أو تقترب منه إلا إن سمحت الجهة المسؤولة.",
+      "photo": null,
+      "map": "Bir Ghars Medina Saudi Arabia",
+      "source": "https://saudipedia.com/en/antiquities-in-al-madinah-al-munawwarah-province"
+    },
+    {
+      "id": "haram",
+      "city": "makkah",
+      "name": "المسجد الحرام",
+      "category": "من مناسك العمرة",
+      "emoji": "🕋",
+      "short": "المسجد الذي تتوسطه الكعبة المشرفة وتقام فيه مناسك الطواف.",
+      "history": "يقع قلب مكة المكرمة، وشهد توسعات كبرى عبر العصور، ويقصده المسلمون للصلاة والحج والعمرة.",
+      "importance": "الطواف بالكعبة من أركان العمرة؛ أما الصلاة في المسجد الحرام فلها فضل عظيم.",
+      "tips": "اتبع حركة الحشود وإرشادات رجال الأمن، ولا تتوقف في مسار الطائفين.",
+      "photo": {
+        "file": "Masjid al-Haram 2022.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Masjid%20al-Haram%202022.jpg"
+      },
+      "map": "Masjid al Haram Makkah Saudi Arabia",
+      "source": "https://www.discovermakkah.sa/en/plan-your-trip/discover-your-destination/interactive-map"
+    },
+    {
+      "id": "kaaba",
+      "city": "makkah",
+      "name": "الكعبة المشرفة",
+      "category": "من مناسك العمرة",
+      "emoji": "🕋",
+      "short": "قبلة المسلمين والبيت الذي يطوف حوله المعتمر.",
+      "history": "تقع داخل المسجد الحرام بمكة؛ وهي محور الطواف الذي يكون سبعة أشواط في العمرة والحج.",
+      "importance": "تتجه إليها الصلاة ويُطاف حولها سبعة أشواط ضمن العمرة.",
+      "tips": "لا تدافع للوصول إلى الحجر الأسود أو جدران الكعبة، وسلامتك مقدمة على المزاحمة.",
+      "photo": {
+        "file": "Masjid al-Haram.JPG",
+        "source": "https://commons.wikimedia.org/wiki/File:Masjid%20al-Haram.JPG"
+      },
+      "map": "Kaaba Makkah Saudi Arabia",
+      "source": "https://pep.gov.sa/sites/default/files/2023-08/Investor%20Guide%20to%20HajjUmrah%20Arabic%20Version%20.pdf"
+    },
+    {
+      "id": "maqam",
+      "city": "makkah",
+      "name": "مقام إبراهيم",
+      "category": "داخل المسجد الحرام",
+      "emoji": "✨",
+      "short": "موضع معروف بالقرب من الكعبة المشرفة داخل المسجد الحرام.",
+      "history": "يرتبط بإبراهيم عليه السلام في ذاكرة المسلمين، وهو من المعالم الظاهرة داخل صحن المطاف.",
+      "importance": "تُشرع ركعتا الطواف خلفه إن تيسّر دون إيذاء أو مزاحمة، وإلا فبأي موضع مناسب.",
+      "tips": "لا تعطل حركة الطواف لأجل الصلاة خلف المقام.",
+      "photo": {
+        "file": "Maqam Ibrahim, Makkah.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Maqam%20Ibrahim%2C%20Makkah.jpg"
+      },
+      "map": "Maqam Ibrahim Masjid al Haram Makkah Saudi Arabia",
+      "source": "https://pep.gov.sa/sites/default/files/2023-08/Investor%20Guide%20to%20HajjUmrah%20Arabic%20Version%20.pdf"
+    },
+    {
+      "id": "safa",
+      "city": "makkah",
+      "name": "الصفا والمروة",
+      "category": "من مناسك العمرة",
+      "emoji": "👣",
+      "short": "الموضعان اللذان يتم بينهما السعي سبعة أشواط.",
+      "history": "يرتبط السعي بقصة هاجر وابنها إسماعيل عليهما السلام، ويقع المسعى داخل نطاق المسجد الحرام.",
+      "importance": "السعي بين الصفا والمروة ركن من أركان العمرة، يبدأ من الصفا وينتهي بالمروة.",
+      "tips": "احسب الأشواط بدقة، وابدأ من الصفا، واستعمل المسار المخصص وفق حالتك.",
+      "photo": {
+        "file": "Sa'y between Safa and Marwa 01.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Sa'y%20between%20Safa%20and%20Marwa%2001.jpg"
+      },
+      "map": "Safa and Marwa Masjid al Haram Makkah Saudi Arabia",
+      "source": "https://pep.gov.sa/sites/default/files/2023-08/Investor%20Guide%20to%20HajjUmrah%20Arabic%20Version%20.pdf"
+    },
+    {
+      "id": "zamzam",
+      "city": "makkah",
+      "name": "ماء زمزم",
+      "category": "داخل المسجد الحرام",
+      "emoji": "💧",
+      "short": "ماء البئر المباركة التي ترتبط بقصة هاجر وإسماعيل عليهما السلام.",
+      "history": "بئر زمزم من أشهر معالم المسجد الحرام، ويتوفر ماؤها للشرب في مواضع مخصصة لزوار الحرم.",
+      "importance": "ماء له فضله المعروف، وشربه ليس ركنًا من أركان العمرة.",
+      "tips": "اشرب من النقاط المخصصة دون إعاقة الممرات وحافظ على النظافة.",
+      "photo": {
+        "file": "ماء زمزم في الحرم المكي الشريف.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:%D9%85%D8%A7%D8%A1%20%D8%B2%D9%85%D8%B2%D9%85%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%AD%D8%B1%D9%85%20%D8%A7%D9%84%D9%85%D9%83%D9%8A%20%D8%A7%D9%84%D8%B4%D8%B1%D9%8A%D9%81.jpg"
+      },
+      "map": "Zamzam Masjid al Haram Makkah Saudi Arabia",
+      "source": "https://pep.gov.sa/sites/default/files/2023-08/Investor%20Guide%20to%20HajjUmrah%20Arabic%20Version%20.pdf"
+    },
+    {
+      "id": "jabal-noor",
+      "city": "makkah",
+      "name": "جبل النور",
+      "category": "معلم تاريخي",
+      "emoji": "⛰️",
+      "short": "الجبل الذي يقع فيه غار حراء المرتبط ببداية الوحي.",
+      "history": "يقع شمال شرق مكة، واشتهر بوجود غار حراء الذي كان النبي ﷺ يتعبد فيه قبل البعثة.",
+      "importance": "له قيمة تاريخية في السيرة، وصعوده ليس جزءًا من مناسك العمرة.",
+      "tips": "الصعود شاق وقد يكون خطيرًا في الحرارة والازدحام؛ يمكن الاكتفاء بالمشاهدة من السفح.",
+      "photo": {
+        "file": "Hiraa cave1.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Hiraa%20cave1.jpg"
+      },
+      "representativePhoto": true,
+      "map": "Jabal al Nour Makkah Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-archaeological-sites-in-makkah-al-mukarramah-province"
+    },
+    {
+      "id": "hira",
+      "city": "makkah",
+      "name": "غار حراء",
+      "category": "معلم تاريخي",
+      "emoji": "🏔️",
+      "short": "الغار الذي ارتبط ببدء نزول القرآن الكريم على النبي ﷺ.",
+      "history": "يقع في جبل النور؛ وفيه كان النبي ﷺ يتعبد، وبدأ نزول الوحي عليه بواسطة جبريل عليه السلام.",
+      "importance": "موقع من السيرة للتعرف على بدايات الوحي، وليس للصلاة فيه فضل خاص ثابت للمعتمر.",
+      "tips": "الدخول إلى الغار ضيق وصعب، فلا تعرض نفسك للخطر، واتبع التعليمات.",
+      "photo": {
+        "file": "Hira Cave.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Hira%20Cave.jpg"
+      },
+      "map": "Cave of Hira Makkah Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-archaeological-sites-in-makkah-al-mukarramah-province"
+    },
+    {
+      "id": "thawr",
+      "city": "makkah",
+      "name": "جبل ثور وغار ثور",
+      "category": "معلم تاريخي",
+      "emoji": "🏔️",
+      "short": "معلم يرتبط باختباء النبي ﷺ وأبي بكر رضي الله عنه أثناء الهجرة.",
+      "history": "يقع جنوب مكة، وفي غاره مكث الرسول ﷺ وصاحبه خلال مرحلة من الرحلة إلى المدينة المنورة.",
+      "importance": "زيارة تعليمية لتذكر الهجرة والثقة بالله؛ ليست نسكًا من العمرة.",
+      "tips": "الصعود شديد الصعوبة ويحتاج احتياطًا، ويمكن الاكتفاء بالمشاهدة أو بزيارة المنطقة المحيطة.",
+      "photo": null,
+      "map": "Jabal Thawr Makkah Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-archaeological-sites-in-makkah-al-mukarramah-province"
+    },
+    {
+      "id": "arafat",
+      "city": "makkah",
+      "name": "عرفات وجبل الرحمة",
+      "category": "من مشاعر الحج",
+      "emoji": "🌄",
+      "short": "المشعر الذي يتم فيه الوقوف بعرفة في التاسع من ذي الحجة.",
+      "history": "عرفات منطقة خارج الحرم المكي، ويقف بها الحجاج في يوم عرفة؛ وجبل الرحمة معلم بارز في سهل عرفات.",
+      "importance": "الوقوف بعرفة ركن من الحج، وليس مطلوبًا في العمرة.",
+      "tips": "لا يلزم صعود الجبل، ولا تخصّص زياراته بدعاء معين، واحرص على السلامة.",
+      "photo": {
+        "file": "Mount Arafat.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Mount%20Arafat.jpg"
+      },
+      "map": "Jabal Al Rahmah Arafat Makkah Saudi Arabia",
+      "source": "https://saudipedia.com/en/holy-sites"
+    },
+    {
+      "id": "mina",
+      "city": "makkah",
+      "name": "مشعر منى",
+      "category": "من مشاعر الحج",
+      "emoji": "⛺",
+      "short": "موضع إقامة الحجاج ورمي الجمرات أيام الحج.",
+      "history": "تقع منى بين مكة وعرفات، وتتميز بمخيمات الحجاج ومنشآت الجمرات.",
+      "importance": "من مشاعر الحج، وليست محطة لازمة لأداء العمرة.",
+      "tips": "الوصول إلى بعض المناطق قد يُقيد في موسم الحج؛ اتبع المسارات الرسمية.",
+      "photo": {
+        "file": "Mina Overview.JPG",
+        "source": "https://commons.wikimedia.org/wiki/File:Mina%20Overview.JPG"
+      },
+      "map": "Mina Makkah Saudi Arabia",
+      "source": "https://saudipedia.com/en/holy-sites"
+    },
+    {
+      "id": "muzdalifah",
+      "city": "makkah",
+      "name": "مشعر مزدلفة",
+      "category": "من مشاعر الحج",
+      "emoji": "🌙",
+      "short": "المشعر الذي يبيت فيه الحجاج بعد الإفاضة من عرفات.",
+      "history": "تقع مزدلفة بين عرفات ومنى، وتؤدى فيها أعمال مرتبطة بالحج في أيامه.",
+      "importance": "من مشاعر الحج، ولا تدخل ضمن مناسك العمرة.",
+      "tips": "لا تتوجه للمواقع المقيدة أثناء تنظيم الحشود، واحترم تعليمات موسم الحج.",
+      "photo": {
+        "file": "Muzdalifah.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Muzdalifah.jpg"
+      },
+      "map": "Muzdalifah Makkah Saudi Arabia",
+      "source": "https://saudipedia.com/en/holy-sites"
+    },
+    {
+      "id": "tanim",
+      "city": "makkah",
+      "name": "مسجد التنعيم (مسجد عائشة)",
+      "category": "ميقات لأهل مكة ومن بالحرم",
+      "emoji": "🕌",
+      "short": "من أقرب مواضع الحلّ لمن كان بمكة وأراد الإحرام بعمرة جديدة.",
+      "history": "يقع في منطقة التنعيم خارج حدود الحرم، واشتهر بخروج أم المؤمنين عائشة رضي الله عنها منه للإحرام بالعمرة.",
+      "importance": "موضع للإحرام لمن يحتاج الخروج للحلّ وفق حكم حالته، وليس زيارة لازمة لكل معتمر.",
+      "tips": "لا تقرر تكرار العمرة دون استشارة المرشد الشرعي ومعرفة الأحكام والتنظيمات.",
+      "photo": {
+        "file": "Masjid Aisha (1).jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Masjid%20Aisha%20(1).jpg"
+      },
+      "map": "Masjid Aisha Taneem Makkah Saudi Arabia",
+      "source": "https://www.discovermakkah.sa/en/plan-your-trip/discover-your-destination/interactive-map"
+    },
+    {
+      "id": "mualla",
+      "city": "makkah",
+      "name": "مقبرة المعلاة",
+      "category": "مقبرة تاريخية",
+      "emoji": "🌿",
+      "short": "مقبرة قديمة في مكة ارتبطت بتاريخ أهل مكة الأوائل.",
+      "history": "من المقابر التاريخية المعروفة في مكة المكرمة، وتذكر المصادر وجود عدد من شخصيات التاريخ الإسلامي فيها.",
+      "importance": "زيارة تاريخية للعظة والدعاء للموتى، وليست من مناسك العمرة.",
+      "tips": "احترم ضوابط الوصول والزيارة ولا تتوقع السماح بالدخول في كل وقت.",
+      "photo": {
+        "file": "Jannat ul Mualla Cemetery.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Jannat%20ul%20Mualla%20Cemetery.jpg"
+      },
+      "map": "Jannat al Mualla Makkah Saudi Arabia",
+      "source": "https://saudipedia.com/en/list-of-archaeological-sites-in-makkah-al-mukarramah-province"
+    }
+  ]
+}
