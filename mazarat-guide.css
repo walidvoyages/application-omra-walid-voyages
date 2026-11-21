@@ -38,3 +38,14 @@
 .mz-home-symbol{font-size:30px;background:#fff;border-radius:15px;padding:10px}
 .mz-home-copy{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex:1}
 .mz-home-copy strong{font-size:14px;font-weight:900}.mz-home-copy small{font-size:10px;line-height:1.65;color:#426b88;text-align:right}.mz-home-arrow{color:#0789c9;font-size:20px;font-weight:900}
+
+/* Expanded editorial profiles */
+.mz-overview{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0 20px}
+.mz-fact{border:1px solid #d3eaf4;background:#f1faff;color:#17628e;border-radius:30px;padding:6px 10px;font-size:10px;font-weight:800}
+.mz-article-heading{margin:18px 0 10px}.mz-article-heading h3{margin:0;font-size:16px;color:#163a64}.mz-article-heading p{font-size:10px;color:#607e8c;margin:5px 0}
+.mz-chapter{border-right:4px solid #b5d33f;padding:17px}
+.mz-chapter-label{font-size:10px;font-weight:900;color:#2998cd;margin-bottom:6px}
+.mz-chapter h3{font-size:15px;line-height:1.7}
+.mz-chapter p{font-size:12px;line-height:2.12;margin:9px 0 0;white-space:normal}
+.mz-points{margin:9px 0 0;padding:0 18px 0 0}
+.mz-points li{color:#415b6c;font-size:12px;line-height:2;padding:3px 0}
