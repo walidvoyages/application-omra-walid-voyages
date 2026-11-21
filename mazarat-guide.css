@@ -32,3 +32,9 @@
 .mz-credit{font-size:10px;color:#567181;line-height:1.8;margin:12px 4px}
 .mz-credit a{color:#167fba}
 .mz-notice{background:#f0f8fb;color:#477084;font-size:10px;line-height:1.9;border-radius:15px;padding:12px;margin-top:15px}
+
+/* Visible home entry for the guide */
+.mz-home-entry{width:100%;display:flex;align-items:center;gap:12px;text-align:right;padding:15px 13px;border:1px solid #c9e8f6;border-radius:18px;background:linear-gradient(110deg,#f7fcff,#e6f7ff);font-family:inherit;color:#163a64;cursor:pointer}
+.mz-home-symbol{font-size:30px;background:#fff;border-radius:15px;padding:10px}
+.mz-home-copy{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex:1}
+.mz-home-copy strong{font-size:14px;font-weight:900}.mz-home-copy small{font-size:10px;line-height:1.65;color:#426b88;text-align:right}.mz-home-arrow{color:#0789c9;font-size:20px;font-weight:900}
